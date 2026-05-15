@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
+import 'login_page.dart';
+import 'tutorsign_page.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -95,7 +98,13 @@ class _SignUpPageState extends State<SignUpPage> {
       );
       Future.delayed(const Duration(seconds: 1), () {
         if (mounted) {
-          Navigator.of(context).pop();
+          if (_isTutor) {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (context) => const TutorSignPage()),
+            );
+          } else {
+            Navigator.of(context).pop();
+          }
         }
       });
     });
@@ -679,6 +688,14 @@ class _SignUpPageState extends State<SignUpPage> {
                               fontWeight: FontWeight.bold,
                               decoration: TextDecoration.underline,
                             ),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () {
+                                Navigator.of(context).pushReplacement(
+                                  MaterialPageRoute(
+                                    builder: (context) => const LoginPage(),
+                                  ),
+                                );
+                              },
                           ),
                         ],
                       ),
