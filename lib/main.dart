@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'pages/admin_login.dart';
 import 'pages/login_page.dart';
 import 'pages/signup_page.dart';
 import 'pages/student_dashboard.dart';
@@ -26,8 +27,9 @@ class MyApp extends StatelessWidget {
       routes: {
         '/signup': (context) => const SignUpPage(),
         '/student-dashboard': (context) => const StudentDashboard(),
+        '/admin-login': (context) => const AdminLoginPage(),
+        '/admin-dashboard': (context) => const AdminDashboard(),
       },
     );
   }
 }
-
