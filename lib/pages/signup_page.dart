@@ -45,7 +45,7 @@ class _SignUpPageState extends State<SignUpPage> {
         _confirmPasswordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Sila isi semua medan'),
+          content: Text('Please fill in all fields'),
           backgroundColor: Colors.red,
         ),
       );
@@ -55,7 +55,7 @@ class _SignUpPageState extends State<SignUpPage> {
     if (!_agreeTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Sila setuju dengan terma dan syarat'),
+          content: Text('Please agree to the terms and conditions'),
           backgroundColor: Colors.red,
         ),
       );
@@ -65,7 +65,7 @@ class _SignUpPageState extends State<SignUpPage> {
     if (_passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Password tidak sepadan'),
+          content: Text('Passwords do not match'),
           backgroundColor: Colors.red,
         ),
       );
@@ -75,7 +75,7 @@ class _SignUpPageState extends State<SignUpPage> {
     if (!_isStudent && !_isTutor) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Sila pilih sekurang-kurangnya satu peranan'),
+          content: Text('Please select at least one role'),
           backgroundColor: Colors.red,
         ),
       );
@@ -92,7 +92,7 @@ class _SignUpPageState extends State<SignUpPage> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Pendaftaran berjaya!'),
+          content: Text('Registration successful!'),
           backgroundColor: Colors.green,
         ),
       );
@@ -176,7 +176,7 @@ class _SignUpPageState extends State<SignUpPage> {
                     child: Column(
                       children: [
                         Text(
-                          'Daftar Akaun Baru',
+                          'Create New Account',
                           style:
                               Theme.of(context).textTheme.headlineLarge?.copyWith(
                             color: Colors.white,
@@ -185,7 +185,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Jadilah sebahagian daripada komuniti P2P',
+                          'Join the P2P community',
                           style:
                               Theme.of(context).textTheme.titleSmall?.copyWith(
                             color: Colors.white70,
@@ -196,9 +196,9 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                   const SizedBox(height: 32),
 
-                  // Nama
+                  // Full Name
                   Text(
-                    'Nama Penuh',
+                    'Full Name',
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
@@ -208,7 +208,7 @@ class _SignUpPageState extends State<SignUpPage> {
                   TextField(
                     controller: _nameController,
                     decoration: InputDecoration(
-                      hintText: 'Masukkan nama penuh anda',
+                      hintText: 'Enter your full name',
                       hintStyle: TextStyle(color: Colors.grey[400]),
                       prefixIcon: const Icon(Icons.person_outline),
                       prefixIconColor: Colors.white70,
@@ -251,7 +251,7 @@ class _SignUpPageState extends State<SignUpPage> {
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
-                      hintText: 'Masukkan email anda',
+                      hintText: 'Enter your email',
                       hintStyle: TextStyle(color: Colors.grey[400]),
                       prefixIcon: const Icon(Icons.email_outlined),
                       prefixIconColor: Colors.white70,
@@ -281,9 +281,9 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Nombor Telefon
+                  // Phone Number
                   Text(
-                    'Nombor Telefon',
+                    'Phone Number',
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
@@ -324,9 +324,9 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Nombor Matrik
+                  // Matric Number
                   Text(
-                    'Nombor Matrik',
+                    'Matric Number',
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
@@ -336,7 +336,7 @@ class _SignUpPageState extends State<SignUpPage> {
                   TextField(
                     controller: _matricController,
                     decoration: InputDecoration(
-                      hintText: 'Cth: 2022123456',
+                      hintText: 'Example: 2022123456',
                       hintStyle: TextStyle(color: Colors.grey[400]),
                       prefixIcon: const Icon(Icons.badge_outlined),
                       prefixIconColor: Colors.white70,
@@ -366,9 +366,9 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Peranan (Peer-to-Peer Toggle)
+                  // Role Selection
                   Text(
-                    'Pilih Peranan Anda',
+                    'Choose Your Role',
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
@@ -408,7 +408,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  'Pelajar',
+                                  'Student',
                                   style: TextStyle(
                                     color: _isStudent
                                         ? const Color(0xFF6200EE)
@@ -471,7 +471,7 @@ class _SignUpPageState extends State<SignUpPage> {
                   const SizedBox(height: 4),
                   Center(
                     child: Text(
-                      'Anda boleh memilih kedua-duanya!',
+                      'You can choose both!',
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.7),
                         fontSize: 12,
@@ -494,7 +494,7 @@ class _SignUpPageState extends State<SignUpPage> {
                     controller: _passwordController,
                     obscureText: _obscurePassword,
                     decoration: InputDecoration(
-                      hintText: 'Masukkan password anda',
+                      hintText: 'Enter your password',
                       hintStyle: TextStyle(color: Colors.grey[400]),
                       prefixIcon: const Icon(Icons.lock_outline),
                       prefixIconColor: Colors.white70,
@@ -539,7 +539,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
                   // Confirm Password
                   Text(
-                    'Sahkan Password',
+                    'Confirm Password',
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
@@ -550,7 +550,7 @@ class _SignUpPageState extends State<SignUpPage> {
                     controller: _confirmPasswordController,
                     obscureText: _obscureConfirmPassword,
                     decoration: InputDecoration(
-                      hintText: 'Ulang password anda',
+                      hintText: 'Re-enter your password',
                       hintStyle: TextStyle(color: Colors.grey[400]),
                       prefixIcon: const Icon(Icons.lock_outline),
                       prefixIconColor: Colors.white70,
@@ -612,14 +612,14 @@ class _SignUpPageState extends State<SignUpPage> {
                       Expanded(
                         child: RichText(
                           text: TextSpan(
-                            text: 'Saya setuju dengan ',
+                            text: 'I agree to the ',
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.9),
                               fontSize: 12,
                             ),
                             children: [
                               TextSpan(
-                                text: 'Terma & Syarat',
+                                text: 'Terms & Conditions',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
@@ -660,7 +660,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         ),
                       )
                           : Text(
-                        'Daftar Sekarang',
+                        'Sign Up Now',
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
                           color: const Color(0xFF6200EE),
                           fontWeight: FontWeight.bold,
@@ -675,14 +675,14 @@ class _SignUpPageState extends State<SignUpPage> {
                   Center(
                     child: RichText(
                       text: TextSpan(
-                        text: 'Sudah ada akaun? ',
+                        text: 'Already have an account? ',
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.9),
                           fontSize: 14,
                         ),
                         children: [
                           TextSpan(
-                            text: 'Log masuk di sini',
+                            text: 'Login here',
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,

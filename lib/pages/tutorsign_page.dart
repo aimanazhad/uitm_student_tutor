@@ -36,7 +36,7 @@ class _TutorSignPageState extends State<TutorSignPage> {
     if (selected.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Sila pilih sekurang-kurangnya satu subjek'),
+          content: Text('Please select at least one subject'),
           backgroundColor: Colors.red,
         ),
       );
@@ -57,7 +57,7 @@ class _TutorSignPageState extends State<TutorSignPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Pendaftaran tutor berjaya!'),
+          content: Text('Tutor registration successful!'),
           backgroundColor: Colors.green,
         ),
       );
@@ -141,7 +141,7 @@ class _TutorSignPageState extends State<TutorSignPage> {
                     child: Column(
                       children: [
                         Text(
-                          'Pilih Subjek Pengajaran',
+                          'Choose Teaching Subjects',
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                             color: Colors.white,
@@ -150,7 +150,7 @@ class _TutorSignPageState extends State<TutorSignPage> {
                         ),
                         const SizedBox(height: 8),
                         const Text(
-                          'Pilih subjek yang anda ingin ajar',
+                          'Select the subjects you want to teach',
                           style: TextStyle(color: Colors.white70),
                         ),
                       ],
@@ -160,7 +160,7 @@ class _TutorSignPageState extends State<TutorSignPage> {
 
                   // Subjects Selection
                   const Text(
-                    'Subjek Tersedia',
+                    'Available Subjects',
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -217,7 +217,7 @@ class _TutorSignPageState extends State<TutorSignPage> {
                               ),
                             )
                           : const Text(
-                              'Hantar',
+                              'Submit',
                               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                     ),

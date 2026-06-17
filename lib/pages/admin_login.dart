@@ -27,7 +27,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Sila masukkan email dan password admin'),
+          content: Text('Please enter admin email and password'),
           backgroundColor: Colors.red,
         ),
       );
@@ -37,7 +37,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
     if (email != 'admin@gmail.com' || password != '12345') {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Email atau password admin salah'),
+          content: Text('Incorrect admin email or password'),
           backgroundColor: Colors.red,
         ),
       );
@@ -55,7 +55,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Admin login berjaya!'),
+          content: Text('Admin login successful!'),
           backgroundColor: Colors.green,
         ),
       );
@@ -96,7 +96,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Sila log masuk menggunakan akaun admin sahaja.',
+                    'Please sign in using an admin account only.',
                     style: Theme.of(
                       context,
                     ).textTheme.bodyMedium?.copyWith(color: Colors.white70),
@@ -222,7 +222,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                               ),
                             )
                           : Text(
-                              'Log Masuk Admin',
+                              'Admin Login',
                               style: Theme.of(context).textTheme.labelLarge
                                   ?.copyWith(
                                     color: const Color(0xFF6200EE),
@@ -265,7 +265,7 @@ class AdminDashboard extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               Text(
-                'Selamat datang Admin',
+                'Welcome Admin',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -273,7 +273,7 @@ class AdminDashboard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               const Text(
-                'Anda telah berjaya log masuk sebagai admin.',
+                'You have successfully logged in as admin.',
                 textAlign: TextAlign.center,
               ),
             ],

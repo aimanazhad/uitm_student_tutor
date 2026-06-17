@@ -25,7 +25,7 @@ class _LoginPageState extends State<LoginPage> {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Sila masukkan email dan password'),
+          content: Text('Please enter your email and password'),
           backgroundColor: Colors.red,
         ),
       );
@@ -43,7 +43,7 @@ class _LoginPageState extends State<LoginPage> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Login berjaya!'),
+          content: Text('Login successful!'),
           backgroundColor: Colors.green,
         ),
       );
@@ -98,7 +98,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 32),
                   Text(
-                    'Selamat Datang',
+                    'Welcome',
                     style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -126,7 +126,7 @@ class _LoginPageState extends State<LoginPage> {
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
-                      hintText: 'Masukkan email anda',
+                      hintText: 'Enter your email',
                       hintStyle: TextStyle(color: Colors.grey[400]),
                       prefixIcon: const Icon(Icons.email_outlined),
                       prefixIconColor: Colors.white70,
@@ -169,7 +169,7 @@ class _LoginPageState extends State<LoginPage> {
                     controller: _passwordController,
                     obscureText: _obscurePassword,
                     decoration: InputDecoration(
-                      hintText: 'Masukkan password anda',
+                      hintText: 'Enter your password',
                       hintStyle: TextStyle(color: Colors.grey[400]),
                       prefixIcon: const Icon(Icons.lock_outline),
                       prefixIconColor: Colors.white70,
@@ -232,7 +232,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                           Text(
-                            'Ingat saya',
+                            'Remember me',
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.9),
                               fontSize: 14,
@@ -245,13 +245,13 @@ class _LoginPageState extends State<LoginPage> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text(
-                                'Lupa password feature coming soon',
+                                'Forgot password feature coming soon',
                               ),
                             ),
                           );
                         },
                         child: Text(
-                          'Lupa password?',
+                          'Forgot password?',
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.9),
                             fontSize: 14,
@@ -289,7 +289,7 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             )
                           : Text(
-                              'Log Masuk',
+                              'Login',
                               style: Theme.of(context).textTheme.labelLarge
                                   ?.copyWith(
                                     color: const Color(0xFF6200EE),
@@ -309,14 +309,14 @@ class _LoginPageState extends State<LoginPage> {
                       },
                       child: RichText(
                         text: TextSpan(
-                          text: 'Belum ada akaun? ',
+                          text: 'Don\'t have an account? ',
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.9),
                             fontSize: 14,
                           ),
                           children: [
                             TextSpan(
-                              text: 'Daftar di sini',
+                              text: 'Sign up here',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -335,7 +335,7 @@ class _LoginPageState extends State<LoginPage> {
                         Navigator.of(context).pushNamed('/admin-login');
                       },
                       child: Text(
-                        'Log masuk sebagai admin',
+                        'Login as admin',
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.9),
                           fontSize: 14,
