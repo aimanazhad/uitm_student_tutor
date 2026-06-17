@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'studentprofile_page.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -772,28 +773,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 
   Widget _buildProfileTab() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.person_outline,
-            size: 64,
-            color: Colors.grey[300],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'My Profile',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Manage your profile\ncoming soon',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey[600]),
-          ),
-        ],
-      ),
-    );
+    return const StudentProfilePage();
   }
 }
