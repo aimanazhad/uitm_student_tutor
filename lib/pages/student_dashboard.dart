@@ -89,6 +89,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
   Widget _buildHomeTab() {
     return SingleChildScrollView(
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Welcome Banner
           Container(
