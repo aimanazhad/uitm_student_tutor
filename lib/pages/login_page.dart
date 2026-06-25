@@ -29,9 +29,10 @@ class _LoginPageState extends State<LoginPage> {
 
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter your email and password'),
+        SnackBar(
+          content: const Text('Incorrect email or password'),
           backgroundColor: Colors.red,
+          duration: const Duration(seconds: 2),
         ),
       );
       return;
@@ -74,11 +75,11 @@ class _LoginPageState extends State<LoginPage> {
         Navigator.of(context).pushReplacementNamed('/student-dashboard');
       }
     } on FirebaseAuthException catch (e) {
-      String message = 'Login failed';
+      String message = 'Incorrect email or password';
       if (e.code == 'invalid-email') {
-        message = 'Email format is invalid';
+        message = 'Incorrect email or password';
       } else if (e.code == 'user-not-found' || e.code == 'wrong-password') {
-        message = 'Email or password is incorrect';
+        message = 'Incorrect email or password';
       } else if (e.code == 'user-disabled') {
         message = 'This account has been disabled';
       } else if (e.code == 'too-many-requests') {
@@ -89,7 +90,11 @@ class _LoginPageState extends State<LoginPage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
         );
       }
     } finally {

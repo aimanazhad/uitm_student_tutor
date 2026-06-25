@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class StudentProfilePage extends StatefulWidget {
@@ -8,11 +10,31 @@ class StudentProfilePage extends StatefulWidget {
 }
 
 class _StudentProfilePageState extends State<StudentProfilePage> {
-  // Sample user data - in a real app, this would come from a database or API
-  final String name = 'Abshar Danial';
-  final String matricNumber = '2024236172';
-  final String phoneNumber = '012-3456789';
-  final String status = 'Student';
+  String name = 'Loading...';
+  String matricNumber = 'Loading...';
+  String phoneNumber = 'Loading...';
+  String status = 'Student';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    if (!mounted) return;
+
+    setState(() {
+      name = doc.data()?['name']?.toString() ?? 'No name';
+      matricNumber = doc.data()?['matric']?.toString() ?? 'No matric';
+      phoneNumber = doc.data()?['phone']?.toString() ?? 'No phone';
+      status = (doc.data()?['role']?.toString() ?? 'student').toUpperCase();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -108,9 +130,9 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(context)
-                            .pushNamed('/student-edit-profile');
+                      onPressed: () async {
+                        await Navigator.of(context).pushNamed('/student-edit-profile');
+                        _loadProfile();
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF6200EE),

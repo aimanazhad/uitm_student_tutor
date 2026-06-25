@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'studentprofile_page.dart';
 
@@ -10,6 +12,25 @@ class StudentDashboard extends StatefulWidget {
 
 class _StudentDashboardState extends State<StudentDashboard> {
   int _selectedIndex = 0;
+  String _userName = 'Student';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+  }
+
+  Future<void> _loadUserProfile() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    if (!mounted) return;
+
+    setState(() {
+      _userName = doc.data()?['name']?.toString() ?? 'Student';
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +127,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Welcome back, Ahmad! 👋',
+                  'Welcome back, $_userName! 👋',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,

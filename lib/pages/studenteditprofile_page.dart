@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class StudentEditProfilePage extends StatefulWidget {
@@ -11,14 +13,15 @@ class _StudentEditProfilePageState extends State<StudentEditProfilePage> {
   late TextEditingController _nameController;
   late TextEditingController _matricController;
   late TextEditingController _phoneController;
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    // Initialize controllers with existing data
-    _nameController = TextEditingController(text: 'Abshar Danial');
-    _matricController = TextEditingController(text: '2021123456');
-    _phoneController = TextEditingController(text: '012-3456789');
+    _nameController = TextEditingController();
+    _matricController = TextEditingController();
+    _phoneController = TextEditingController();
+    _loadProfile();
   }
 
   @override
@@ -29,14 +32,59 @@ class _StudentEditProfilePageState extends State<StudentEditProfilePage> {
     super.dispose();
   }
 
-  void _saveChanges() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Profile updated successfully!'),
-        backgroundColor: Colors.green,
-      ),
-    );
-    Navigator.of(context).pop();
+  Future<void> _loadProfile() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    if (!mounted) return;
+
+    setState(() {
+      _nameController.text = doc.data()?['name']?.toString() ?? '';
+      _matricController.text = doc.data()?['matric']?.toString() ?? '';
+      _phoneController.text = doc.data()?['phone']?.toString() ?? '';
+    });
+  }
+
+  Future<void> _saveChanges() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+        'name': _nameController.text.trim(),
+        'matric': _matricController.text.trim(),
+        'phone': _phoneController.text.trim(),
+      });
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile updated successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save profile: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
   }
 
   void _cancelEdit() {
@@ -193,7 +241,7 @@ class _StudentEditProfilePageState extends State<StudentEditProfilePage> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _saveChanges,
+                      onPressed: _isSaving ? null : _saveChanges,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF6200EE),
                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -201,14 +249,23 @@ class _StudentEditProfilePageState extends State<StudentEditProfilePage> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      child: const Text(
-                        'SAVE CHANGES',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: _isSaving
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text(
+                              'SAVE CHANGES',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
                   ),
 
