@@ -768,25 +768,89 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 
   Widget _buildBookingsTab() {
-    return Center(
+    return Padding(
+      padding: const EdgeInsets.all(20),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.calendar_today_outlined,
-            size: 64,
-            color: Colors.grey[300],
-          ),
-          const SizedBox(height: 16),
-          Text(
+          const Text(
             'Your Bookings',
-            style: Theme.of(context).textTheme.headlineSmall,
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          Text(
-            'View all your bookings\ncoming soon',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey[600]),
+          const Text(
+            'Book a class for your subject and manage your request here.',
+            style: TextStyle(color: Colors.black54),
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: const [
+                    Icon(Icons.school_outlined, color: Color(0xFF6200EE)),
+                    SizedBox(width: 8),
+                    Text(
+                      'New Booking',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Text('Pick a subject, date, and time for a class session.'),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pushNamed('/student-booking');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF6200EE),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: const Text(
+                      'Book a Subject Class',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: const [
+                Icon(Icons.info_outline, color: Color(0xFF6200EE)),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Your booking requests will appear here once tutors respond.',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
