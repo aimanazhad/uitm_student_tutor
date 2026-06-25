@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class LoginPage extends StatefulWidget {
@@ -21,8 +23,11 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void _handleLogin() {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+  Future<void> _handleLogin() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please enter your email and password'),
@@ -36,24 +41,64 @@ class _LoginPageState extends State<LoginPage> {
       _isLoading = true;
     });
 
-    // Simulate login delay
-    Future.delayed(const Duration(seconds: 2), () {
-      setState(() {
-        _isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Login successful!'),
-          backgroundColor: Colors.green,
-        ),
+    try {
+      final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
       );
-      // Navigate to student dashboard
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          Navigator.of(context).pushReplacementNamed('/student-dashboard');
-        }
-      });
-    });
+
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userCredential.user!.uid)
+          .get();
+
+      final role = userDoc.data()?['role'] ?? 'student';
+
+      if (!mounted) return;
+
+      if (role == 'admin') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Login successful!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.of(context).pushReplacementNamed('/admin-dashboard');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Login successful!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.of(context).pushReplacementNamed('/student-dashboard');
+      }
+    } on FirebaseAuthException catch (e) {
+      String message = 'Login failed';
+      if (e.code == 'invalid-email') {
+        message = 'Email format is invalid';
+      } else if (e.code == 'user-not-found' || e.code == 'wrong-password') {
+        message = 'Email or password is incorrect';
+      } else if (e.code == 'user-disabled') {
+        message = 'This account has been disabled';
+      } else if (e.code == 'too-many-requests') {
+        message = 'Too many attempts. Please try again later';
+      } else {
+        message = e.message ?? message;
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override

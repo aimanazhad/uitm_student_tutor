@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'login_page.dart';
@@ -36,13 +38,20 @@ class _SignUpPageState extends State<SignUpPage> {
     super.dispose();
   }
 
-  void _handleSignUp() {
-    if (_nameController.text.isEmpty ||
-        _emailController.text.isEmpty ||
-        _phoneController.text.isEmpty ||
-        _matricController.text.isEmpty ||
-        _passwordController.text.isEmpty ||
-        _confirmPasswordController.text.isEmpty) {
+  Future<void> _handleSignUp() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final phone = _phoneController.text.trim();
+    final matric = _matricController.text.trim();
+    final password = _passwordController.text.trim();
+    final confirmPassword = _confirmPasswordController.text.trim();
+
+    if (name.isEmpty ||
+        email.isEmpty ||
+        phone.isEmpty ||
+        matric.isEmpty ||
+        password.isEmpty ||
+        confirmPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please fill in all fields'),
@@ -62,7 +71,7 @@ class _SignUpPageState extends State<SignUpPage> {
       return;
     }
 
-    if (_passwordController.text != _confirmPasswordController.text) {
+    if (password != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Passwords do not match'),
@@ -86,28 +95,82 @@ class _SignUpPageState extends State<SignUpPage> {
       _isLoading = true;
     });
 
-    Future.delayed(const Duration(seconds: 2), () {
-      setState(() {
-        _isLoading = false;
-      });
+    try {
+      final credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(credential.user!.uid)
+          .set({
+            'name': name,
+            'email': email,
+            'phone': phone,
+            'matric': matric,
+            'role': _isTutor ? 'tutor' : 'student',
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Registration successful!'),
           backgroundColor: Colors.green,
         ),
       );
-      Future.delayed(const Duration(seconds: 1), () {
-        if (mounted) {
-          if (_isTutor) {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => const TutorSignPage()),
-            );
-          } else {
-            Navigator.of(context).pop();
-          }
-        }
-      });
-    });
+
+      if (_isTutor) {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const TutorSignPage()),
+        );
+      } else {
+        Navigator.of(context).pop();
+      }
+    } on FirebaseAuthException catch (e) {
+      String message = 'Registration failed';
+      if (e.code == 'email-already-in-use') {
+        message = 'This email is already registered';
+      } else if (e.code == 'invalid-email') {
+        message = 'Email format is invalid';
+      } else if (e.code == 'weak-password') {
+        message = 'Password is too weak';
+      } else {
+        message = e.message ?? message;
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: Colors.red),
+        );
+      }
+    } on FirebaseException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message ?? 'Failed to save user data'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Unexpected error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override

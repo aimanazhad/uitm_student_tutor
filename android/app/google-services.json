@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "485307769628",
+    "project_id": "uitm-student-tutor",
+    "storage_bucket": "uitm-student-tutor.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:485307769628:android:975a7cc4b9d23ff87a90d9",
+        "android_client_info": {
+          "package_name": "com.uitm.studenttutor"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBRe6QXSdwR0xKzDcWi9mS81Sc4ecuywc4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
