@@ -135,7 +135,7 @@ class _LoginPageState extends State<LoginPage> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
+                          color: Colors.black.withValues(alpha: 0.2),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
@@ -190,17 +190,17 @@ class _LoginPageState extends State<LoginPage> {
                       prefixIcon: const Icon(Icons.email_outlined),
                       prefixIconColor: Colors.white70,
                       filled: true,
-                      fillColor: Colors.white.withOpacity(0.15),
+                      fillColor: Colors.white.withValues(alpha: 0.15),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
@@ -249,17 +249,17 @@ class _LoginPageState extends State<LoginPage> {
                         color: Colors.white70,
                       ),
                       filled: true,
-                      fillColor: Colors.white.withOpacity(0.15),
+                      fillColor: Colors.white.withValues(alpha: 0.15),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
@@ -290,13 +290,13 @@ class _LoginPageState extends State<LoginPage> {
                             activeColor: Colors.white,
                             checkColor: const Color(0xFF6200EE),
                             side: BorderSide(
-                              color: Colors.white.withOpacity(0.7),
+                              color: Colors.white.withValues(alpha: 0.7),
                             ),
                           ),
                           Text(
                             'Remember me',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
+                              color: Colors.white.withValues(alpha: 0.9),
                               fontSize: 14,
                             ),
                           ),
@@ -315,7 +315,7 @@ class _LoginPageState extends State<LoginPage> {
                         child: Text(
                           'Forgot password?',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                           ),
@@ -333,9 +333,9 @@ class _LoginPageState extends State<LoginPage> {
                       onPressed: _isLoading ? null : _handleLogin,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
-                        disabledBackgroundColor: Colors.white.withOpacity(0.5),
+                        disabledBackgroundColor: Colors.white.withValues(alpha: 0.5),
                         elevation: 8,
-                        shadowColor: Colors.black.withOpacity(0.3),
+                        shadowColor: Colors.black.withValues(alpha: 0.3),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -373,7 +373,7 @@ class _LoginPageState extends State<LoginPage> {
                         text: TextSpan(
                           text: 'Don\'t have an account? ',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             fontSize: 14,
                           ),
                           children: [
@@ -399,7 +399,7 @@ class _LoginPageState extends State<LoginPage> {
                       child: Text(
                         'Login as admin',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           decoration: TextDecoration.underline,

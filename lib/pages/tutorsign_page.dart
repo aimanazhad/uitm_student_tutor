@@ -125,7 +125,7 @@ class _TutorSignPageState extends State<TutorSignPage> {
                           child: Container(
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                             ),
                             padding: const EdgeInsets.all(8),
                             child: const Icon(
@@ -143,7 +143,7 @@ class _TutorSignPageState extends State<TutorSignPage> {
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
+                                  color: Colors.black.withValues(alpha: 0.2),
                                   blurRadius: 20,
                                   offset: const Offset(0, 10),
                                 ),
@@ -202,7 +202,7 @@ class _TutorSignPageState extends State<TutorSignPage> {
                         const SizedBox(height: 16),
                         Container(
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
+                            color: Colors.white.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Column(
