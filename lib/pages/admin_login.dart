@@ -132,17 +132,17 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                             prefixIcon: const Icon(Icons.email_outlined),
                             prefixIconColor: Colors.white70,
                             filled: true,
-                            fillColor: Colors.white.withOpacity(0.15),
+                            fillColor: Colors.white.withValues(alpha: 0.15),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                color: Colors.white.withOpacity(0.3),
+                                color: Colors.white.withValues(alpha: 0.3),
                               ),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                color: Colors.white.withOpacity(0.3),
+                                color: Colors.white.withValues(alpha: 0.3),
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
@@ -186,17 +186,17 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                               color: Colors.white70,
                             ),
                             filled: true,
-                            fillColor: Colors.white.withOpacity(0.15),
+                            fillColor: Colors.white.withValues(alpha: 0.15),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                color: Colors.white.withOpacity(0.3),
+                                color: Colors.white.withValues(alpha: 0.3),
                               ),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                color: Colors.white.withOpacity(0.3),
+                                color: Colors.white.withValues(alpha: 0.3),
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
@@ -218,9 +218,9 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,
                               disabledBackgroundColor:
-                                  Colors.white.withOpacity(0.5),
+                                  Colors.white.withValues(alpha: 0.5),
                               elevation: 8,
-                              shadowColor: Colors.black.withOpacity(0.3),
+                              shadowColor: Colors.black.withValues(alpha: 0.3),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),

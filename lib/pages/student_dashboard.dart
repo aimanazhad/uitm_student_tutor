@@ -1,8 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'studentprofile_page.dart';
 import 'findtutor_page.dart';
+import 'studdrawer_page.dart';
+import 'forum_page.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -37,9 +38,22 @@ class _StudentDashboardState extends State<StudentDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
+      drawer: const StudentDrawerPage(),
       appBar: AppBar(
         backgroundColor: const Color(0xFF6200EE),
         elevation: 0,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const CircleAvatar(
+              radius: 16,
+              backgroundColor: Colors.white,
+              child: Icon(Icons.person, color: Color(0xFF6200EE), size: 18),
+            ),
+            onPressed: () {
+              Scaffold.of(context).openDrawer();
+            },
+          ),
+        ),
         title: const Text(
           'UITM Student Tutor',
           style: TextStyle(
@@ -57,15 +71,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
               );
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.person_outline),
-            color: Colors.white,
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Profile coming soon')),
-              );
-            },
-          ),
         ],
       ),
       body: _selectedIndex == 0
@@ -73,8 +78,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
           : _selectedIndex == 1
               ? _buildSearchTab()
               : _selectedIndex == 2
-                  ? _buildBookingsTab()
-                  : _buildProfileTab(),
+                  ? _buildForumTab()
+                  : _buildBookingsTab(),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) {
@@ -95,14 +100,14 @@ class _StudentDashboardState extends State<StudentDashboard> {
             label: 'Find Tutor',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.forum_outlined),
+            activeIcon: Icon(Icons.forum),
+            label: 'Forum',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.calendar_today_outlined),
             activeIcon: Icon(Icons.calendar_today),
             label: 'Bookings',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined),
-            activeIcon: Icon(Icons.settings),
-            label: 'Profile',
           ),
         ],
       ),
@@ -138,7 +143,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 Text(
                   'Find the perfect tutor for your subjects',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 16,
                   ),
                 ),
@@ -348,7 +353,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
             ),
           ],
@@ -358,7 +363,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
           children: [
             Container(
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               padding: const EdgeInsets.all(12),
@@ -399,7 +404,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
           ),
         ],
@@ -459,7 +464,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
           ),
           Container(
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
+              color: Colors.green.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -489,13 +494,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.red.withOpacity(0.15),
+            color: Colors.red.withValues(alpha: 0.15),
             blurRadius: 15,
             spreadRadius: 1,
           ),
         ],
         border: Border.all(
-          color: Colors.red.withOpacity(0.2),
+          color: Colors.red.withValues(alpha: 0.2),
           width: 1.5,
         ),
       ),
@@ -554,7 +559,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
           ),
           Container(
             decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.15),
+              color: Colors.red.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(20),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -602,7 +607,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
           ),
         ],
@@ -698,7 +703,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: const Color(0xFF6200EE).withOpacity(0.1),
+              color: const Color(0xFF6200EE).withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -769,7 +774,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -836,7 +841,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     );
   }
 
-  Widget _buildProfileTab() {
-    return const StudentProfilePage();
+  Widget _buildForumTab() {
+    return const ForumPage();
   }
 }
