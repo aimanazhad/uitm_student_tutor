@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class TutorSignPage extends StatefulWidget {
@@ -27,7 +29,7 @@ class _TutorSignPageState extends State<TutorSignPage> {
     }
   }
 
-  void _handleSubmit() {
+  Future<void> _handleSubmit() async {
     List<String> selected = _selectedSubjects.entries
         .where((entry) => entry.value)
         .map((entry) => entry.key)
@@ -47,13 +49,19 @@ class _TutorSignPageState extends State<TutorSignPage> {
       _isLoading = true;
     });
 
-    // Simulate API call
-    Future.delayed(const Duration(seconds: 2), () {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('No authenticated user');
+      }
+
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'subject': selected.first,
+        'subjects': selected,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
       if (!mounted) return;
-      
-      setState(() {
-        _isLoading = false;
-      });
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -62,12 +70,26 @@ class _TutorSignPageState extends State<TutorSignPage> {
         ),
       );
 
-      Future.delayed(const Duration(seconds: 1), () {
-        if (mounted) {
-          Navigator.of(context).pop(); 
-        }
-      });
-    });
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save tutor information: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override

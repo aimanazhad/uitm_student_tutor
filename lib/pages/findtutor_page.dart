@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class FindTutorPage extends StatefulWidget {
@@ -12,7 +11,7 @@ class FindTutorPage extends StatefulWidget {
 class _FindTutorPageState extends State<FindTutorPage> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedSubject = 'All Subjects';
-  List<String> _subjects = ['All Subjects', 'Mathematics', 'Physics', 'Chemistry', 'Biology', 'English', 'History', 'Geography'];
+  final List<String> _subjects = ['All Subjects', 'Mathematics', 'Physics', 'Chemistry', 'Biology', 'English', 'History', 'Geography'];
   List<Map<String, dynamic>> _filteredTutors = [];
   bool _isLoading = false;
 
@@ -22,45 +21,69 @@ class _FindTutorPageState extends State<FindTutorPage> {
     _loadTutors();
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadTutors() async {
+    if (!mounted) return;
+
     setState(() {
       _isLoading = true;
     });
 
     try {
-      Query query = FirebaseFirestore.instance
+      final snapshot = await FirebaseFirestore.instance
           .collection('users')
-          .where('role', isEqualTo: 'tutor');
+          .where('role', isEqualTo: 'tutor')
+          .get();
 
-      if (_selectedSubject != 'All Subjects') {
-        query = query.where('subject', isEqualTo: _selectedSubject);
-      }
+      final searchText = _searchController.text.toLowerCase().trim();
+      final tutors = <Map<String, dynamic>>[];
 
-      final snapshot = await query.get();
-      
-      List<Map<String, dynamic>> tutors = [];
-      for (var doc in snapshot.docs) {
-        final data = doc.data() as Map<String, dynamic>;
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
         final name = data['name']?.toString() ?? 'Unknown';
-        final subject = data['subject']?.toString() ?? 'Unknown';
-        final searchText = _searchController.text.toLowerCase();
-        
-        // Filter by search text
-        if (searchText.isEmpty || 
-            name.toLowerCase().contains(searchText) || 
-            subject.toLowerCase().contains(searchText)) {
-          tutors.add({
-            'id': doc.id,
-            'name': name,
-            'subject': subject,
-            'rating': (data['rating']?.toDouble() ?? 0.0),
-            'reviewCount': data['reviewCount'] ?? 0,
-            'price': data['price']?.toDouble() ?? 50.0,
-            'bio': data['bio']?.toString() ?? 'No bio available',
-            'phone': data['phone']?.toString() ?? 'N/A',
-            'experience': data['experience']?.toString() ?? 'Unknown',
-          });
+
+        final subjectList = <String>[];
+        if (data['subjects'] is List) {
+          subjectList.addAll(
+            (data['subjects'] as List)
+                .map((item) => item.toString())
+                .where((item) => item.isNotEmpty),
+          );
         }
+
+        final subject = subjectList.isNotEmpty
+            ? subjectList.join(', ')
+            : (data['subject']?.toString() ?? 'Unknown');
+
+        final matchesSubject = _selectedSubject == 'All Subjects' ||
+            subjectList.contains(_selectedSubject) ||
+            subject == _selectedSubject;
+
+        final matchesSearch = searchText.isEmpty ||
+            name.toLowerCase().contains(searchText) ||
+            subject.toLowerCase().contains(searchText) ||
+            subjectList.any((item) => item.toLowerCase().contains(searchText));
+
+        if (!matchesSubject || !matchesSearch) {
+          continue;
+        }
+
+        tutors.add({
+          'id': doc.id,
+          'name': name,
+          'subject': subject,
+          'rating': (data['rating'] is num) ? (data['rating'] as num).toDouble() : 0.0,
+          'reviewCount': data['reviewCount'] ?? 0,
+          'price': (data['price'] is num) ? (data['price'] as num).toDouble() : 50.0,
+          'bio': data['bio']?.toString() ?? 'No bio available',
+          'phone': data['phone']?.toString() ?? 'N/A',
+          'experience': data['experience']?.toString() ?? 'Unknown',
+        });
       }
 
       if (mounted) {
@@ -263,7 +286,7 @@ class _FindTutorPageState extends State<FindTutorPage> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -597,11 +620,5 @@ class _FindTutorPageState extends State<FindTutorPage> {
       '/student-booking',
       arguments: {'tutorId': tutor['id'], 'tutorName': tutor['name']},
     );
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
   }
 }
