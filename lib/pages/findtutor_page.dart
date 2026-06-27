@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../constants/subjects.dart';
 
 class FindTutorPage extends StatefulWidget {
   const FindTutorPage({super.key});
@@ -11,7 +12,7 @@ class FindTutorPage extends StatefulWidget {
 class _FindTutorPageState extends State<FindTutorPage> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedSubject = 'All Subjects';
-  final List<String> _subjects = ['All Subjects', 'Mathematics', 'Physics', 'Chemistry', 'Biology', 'English', 'History', 'Geography'];
+  final List<String> _subjects = kTutorFilterSubjects;
   List<Map<String, dynamic>> _filteredTutors = [];
   bool _isLoading = false;
 

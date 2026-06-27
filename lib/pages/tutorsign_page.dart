@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../constants/subjects.dart';
 
 class TutorSignPage extends StatefulWidget {
   const TutorSignPage({super.key});
@@ -10,12 +11,7 @@ class TutorSignPage extends StatefulWidget {
 }
 
 class _TutorSignPageState extends State<TutorSignPage> {
-  final List<String> _subjects = [
-    'CSC404',
-    'CSC510',
-    'MAT423',
-    'TAC401',
-  ];
+  final List<String> _subjects = kTutorSubjects;
 
   final Map<String, bool> _selectedSubjects = {};
   bool _isLoading = false;

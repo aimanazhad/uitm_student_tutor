@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../constants/subjects.dart';
+import '../services/notification_service.dart';
 
 class StudentBookingPage extends StatefulWidget {
   const StudentBookingPage({super.key});
@@ -10,13 +12,7 @@ class StudentBookingPage extends StatefulWidget {
 }
 
 class _StudentBookingPageState extends State<StudentBookingPage> {
-  final List<String> _subjects = [
-    'Mathematics',
-    'Physics',
-    'Chemistry',
-    'Programming',
-    'English',
-  ];
+  final List<String> _subjects = kBookingSubjects;
 
   String? _selectedSubject;
   DateTime? _selectedDate;
@@ -89,6 +85,12 @@ class _StudentBookingPageState extends State<StudentBookingPage> {
         'notes': _notesController.text.trim(),
         'createdAt': FieldValue.serverTimestamp(),
       });
+
+      await NotificationService.addNotification(
+        userId: user.uid,
+        title: 'Booking Requested',
+        body: 'Your booking for $_selectedSubject has been submitted and is pending approval.',
+      );
 
       if (!mounted) return;
 

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../services/notification_service.dart';
 
 class ForumPage extends StatefulWidget {
   const ForumPage({super.key});
@@ -289,7 +290,7 @@ class _ForumPageState extends State<ForumPage> {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 10,
                             offset: const Offset(0, 2),
                           ),
@@ -376,7 +377,7 @@ class _ForumPageState extends State<ForumPage> {
 
                         return ListView.separated(
                           itemCount: docs.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 12),
+                          separatorBuilder: (context, index) => const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final doc = docs[index];
                             final data = doc.data();
@@ -445,7 +446,7 @@ class _ForumPageState extends State<ForumPage> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -611,6 +612,13 @@ class _ForumThreadPageState extends State<ForumThreadPage> {
         'commentsCount': FieldValue.increment(1),
       });
       _commentController.clear();
+
+      await NotificationService.addNotification(
+        userId: widget.threadData['authorId']?.toString() ?? '',
+        title: 'New comment on your post',
+        body: '$_commentAuthor commented on your forum post.',
+      );
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -746,7 +754,7 @@ class _ForumThreadPageState extends State<ForumThreadPage> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 10,
                     offset: const Offset(0, 3),
                   ),
@@ -812,7 +820,7 @@ class _ForumThreadPageState extends State<ForumThreadPage> {
                 return ListView.separated(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: docs.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  separatorBuilder: (context, index) => const SizedBox(height: 10),
                   itemBuilder: (context, index) {
                     final doc = docs[index];
                     final data = doc.data();
@@ -887,7 +895,7 @@ class _ForumThreadPageState extends State<ForumThreadPage> {
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
