@@ -104,6 +104,99 @@ class _ForumPageState extends State<ForumPage> {
     }
   }
 
+  Future<void> _deleteThread(String threadId) async {
+    try {
+      final threadRef = FirebaseFirestore.instance.collection('forums').doc(threadId);
+      final commentsRef = threadRef.collection('comments');
+
+      final commentsSnap = await commentsRef.get();
+      final batch = FirebaseFirestore.instance.batch();
+      for (final doc in commentsSnap.docs) {
+        batch.delete(doc.reference);
+      }
+      batch.delete(threadRef);
+      await batch.commit();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Thread deleted.'), backgroundColor: Colors.green),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete thread: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _editThread(String threadId, String currentTitle, String currentMessage) async {
+    final titleController = TextEditingController(text: currentTitle);
+    final messageController = TextEditingController(text: currentMessage);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit thread'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleController,
+                decoration: const InputDecoration(labelText: 'Title'),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: messageController,
+                maxLines: 4,
+                decoration: const InputDecoration(labelText: 'Message'),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Save')),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final newTitle = titleController.text.trim();
+      final newMessage = messageController.text.trim();
+      if (newTitle.isEmpty || newMessage.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Title and message cannot be empty.'), backgroundColor: Colors.red),
+        );
+        return;
+      }
+
+      try {
+        await FirebaseFirestore.instance.collection('forums').doc(threadId).update({
+          'title': newTitle,
+          'message': newMessage,
+          'editedAt': FieldValue.serverTimestamp(),
+        });
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Thread updated.'), backgroundColor: Colors.green),
+        );
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update thread: $e'), backgroundColor: Colors.red),
+        );
+      } finally {
+        titleController.dispose();
+        messageController.dispose();
+      }
+    } else {
+      titleController.dispose();
+      messageController.dispose();
+    }
+  }
+
   @override
   void dispose() {
     _titleController.dispose();
@@ -243,7 +336,10 @@ class _ForumPageState extends State<ForumPage> {
                               ),
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(vertical: 14),
-                                child: Text(_isPosting ? 'Sending...' : 'Send Message'),
+                                child: Text(
+                                  _isPosting ? 'Sending...' : 'Send Message',
+                                  style: const TextStyle(color: Colors.white),
+                                ),
                               ),
                             ),
                           ),
@@ -288,6 +384,8 @@ class _ForumPageState extends State<ForumPage> {
                               title: data['title'] as String? ?? 'No title',
                               message: data['message'] as String? ?? '',
                               author: data['authorName'] as String? ?? 'Unknown',
+                              authorId: data['authorId'] as String? ?? '',
+                              docId: doc.id,
                               time: _formatTimestamp(data['createdAt'] as Timestamp?),
                               comments: (data['commentsCount'] as int?) ?? 0,
                               onTap: () {
@@ -330,10 +428,13 @@ class _ForumPageState extends State<ForumPage> {
     required String title,
     required String message,
     required String author,
+    required String authorId,
+    required String docId,
     required String time,
     required int comments,
     required VoidCallback onTap,
   }) {
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -377,6 +478,33 @@ class _ForumPageState extends State<ForumPage> {
                     ],
                   ),
                 ),
+                if (currentUserId != null && currentUserId == authorId) ...[
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined, color: Colors.grey),
+                    onPressed: () async {
+                      await _editThread(docId, title, message);
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.grey),
+                    onPressed: () async {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('Delete thread'),
+                          content: const Text('Are you sure you want to delete this thread? This will remove all comments.'),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+                            TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Delete')),
+                          ],
+                        ),
+                      );
+                      if (confirmed == true) {
+                        await _deleteThread(docId);
+                      }
+                    },
+                  ),
+                ],
               ],
             ),
             const SizedBox(height: 12),
@@ -508,6 +636,86 @@ class _ForumThreadPageState extends State<ForumThreadPage> {
     }
   }
 
+  Future<void> _deleteComment(String commentId) async {
+    try {
+      final commentRef = FirebaseFirestore.instance
+          .collection('forums')
+          .doc(widget.threadId)
+          .collection('comments')
+          .doc(commentId);
+
+      final threadRef = FirebaseFirestore.instance.collection('forums').doc(widget.threadId);
+
+      final batch = FirebaseFirestore.instance.batch();
+      batch.delete(commentRef);
+      batch.update(threadRef, {'commentsCount': FieldValue.increment(-1)});
+      await batch.commit();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Comment deleted.'), backgroundColor: Colors.green),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete comment: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _editComment(String commentId, String currentText) async {
+    final controller = TextEditingController(text: currentText);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit comment'),
+        content: TextField(
+          controller: controller,
+          maxLines: 4,
+          decoration: const InputDecoration(labelText: 'Comment'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Save')),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final newText = controller.text.trim();
+      if (newText.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Comment cannot be empty.'), backgroundColor: Colors.red),
+        );
+        return;
+      }
+
+      try {
+        await FirebaseFirestore.instance
+            .collection('forums')
+            .doc(widget.threadId)
+            .collection('comments')
+            .doc(commentId)
+            .update({'text': newText, 'editedAt': FieldValue.serverTimestamp()});
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Comment updated.'), backgroundColor: Colors.green),
+        );
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update comment: $e'), backgroundColor: Colors.red),
+        );
+      } finally {
+        controller.dispose();
+      }
+    } else {
+      controller.dispose();
+    }
+  }
+
   @override
   void dispose() {
     _commentController.dispose();
@@ -606,9 +814,12 @@ class _ForumThreadPageState extends State<ForumThreadPage> {
                   itemCount: docs.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 10),
                   itemBuilder: (context, index) {
-                    final data = docs[index].data();
+                    final doc = docs[index];
+                    final data = doc.data();
                     return _buildCommentCard(
+                      commentId: doc.id,
                       author: data['authorName'] as String? ?? 'Unknown',
+                      authorId: data['authorId'] as String? ?? '',
                       text: data['text'] as String? ?? '',
                       time: _formatTimestamp(data['createdAt'] as Timestamp?),
                     );
@@ -642,11 +853,15 @@ class _ForumThreadPageState extends State<ForumThreadPage> {
                   onPressed: _isSubmittingComment ? null : _submitComment,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF6200EE),
+                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                    child: Text(_isSubmittingComment ? 'Sending' : 'Post'),
+                    child: Text(
+                      _isSubmittingComment ? 'Sending' : 'Post',
+                      style: const TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
               ],
@@ -658,10 +873,13 @@ class _ForumThreadPageState extends State<ForumThreadPage> {
   }
 
   Widget _buildCommentCard({
+    required String commentId,
     required String author,
+    required String authorId,
     required String text,
     required String time,
   }) {
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -705,6 +923,33 @@ class _ForumThreadPageState extends State<ForumThreadPage> {
                   ],
                 ),
               ),
+              if (currentUserId != null && currentUserId == authorId) ...[
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined, color: Colors.grey),
+                  onPressed: () async {
+                    await _editComment(commentId, text);
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.grey),
+                  onPressed: () async {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Delete comment'),
+                        content: const Text('Are you sure you want to delete this comment?'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+                          TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Delete')),
+                        ],
+                      ),
+                    );
+                    if (confirmed == true) {
+                      await _deleteComment(commentId);
+                    }
+                  },
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 10),
