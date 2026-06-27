@@ -36,72 +36,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
   int _hours = 0;
   BookingInfo? _liveBooking;
   BookingInfo? _nextBooking;
-  List<Map<String, dynamic>> _notifications = [];
-  bool _notificationsLoading = false;
-  bool _notificationsError = false;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
-    _loadNotifications();
-  }
-
-  Future<void> _loadNotifications() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    setState(() {
-      _notificationsLoading = true;
-      _notificationsError = false;
-    });
-
-    try {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('notifications')
-          .orderBy('createdAt', descending: true)
-          .limit(5)
-          .get();
-
-      final items = snapshot.docs.map((doc) {
-        final data = doc.data();
-        return {
-          'id': doc.id,
-          'title': data['title']?.toString() ?? 'Notification',
-          'body': data['body']?.toString() ?? '',
-          'read': data['read'] as bool? ?? false,
-          'createdAt': data['createdAt'],
-        };
-      }).toList();
-
-      if (!mounted) return;
-      setState(() {
-        _notifications = items;
-        _notificationsLoading = false;
-      });
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _notificationsLoading = false;
-        _notificationsError = true;
-      });
-    }
-  }
-
-  Future<void> _markNotificationRead(String notificationId) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .collection('notifications')
-        .doc(notificationId)
-        .update({'read': true});
-
-    _loadNotifications();
   }
 
   Future<void> _loadUserData() async {
@@ -193,90 +132,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
           ),
         ),
         actions: [
-          PopupMenuButton<String>(
-            icon: Stack(
-              children: [
-                const Icon(Icons.notifications_outlined, color: Colors.white),
-                if (_notifications.any((notification) => notification['read'] == false))
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            color: Colors.white,
-            itemBuilder: (context) {
-              if (_notificationsLoading) {
-                return const [
-                  PopupMenuItem<String>(
-                    value: 'loading',
-                    child: Text('Loading notifications...'),
-                  ),
-                ];
-              }
-
-              if (_notificationsError) {
-                return [
-                  const PopupMenuItem<String>(
-                    value: 'error',
-                    child: Text('Unable to load notifications'),
-                  ),
-                ];
-              }
-
-              if (_notifications.isEmpty) {
-                return const [
-                  PopupMenuItem<String>(
-                    value: 'empty',
-                    child: Text('No notifications yet'),
-                  ),
-                ];
-              }
-
-              return _notifications.map((notification) {
-                final title = notification['title'] as String;
-                final body = notification['body'] as String;
-                final read = notification['read'] as bool;
-                final id = notification['id'] as String;
-                return PopupMenuItem<String>(
-                  value: id,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: read ? Colors.black54 : Colors.black,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        body,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: Colors.grey[700], fontSize: 12),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList();
-            },
-            onSelected: (selectedId) {
-              if (selectedId == 'loading' || selectedId == 'empty' || selectedId == 'error') {
-                return;
-              }
-              _markNotificationRead(selectedId);
-            },
-          ),
+          _buildNotificationMenu(),
         ],
       ),
       body: _selectedIndex == 0
@@ -825,6 +681,133 @@ class _StudentDashboardState extends State<StudentDashboard> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildNotificationMenu() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return IconButton(
+        icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+        onPressed: () {},
+      );
+    }
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('notifications')
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        final unreadCount = snapshot.data?.docs.where((doc) {
+              final data = doc.data() as Map<String, dynamic>;
+              return data['read'] != true;
+            }).length ?? 0;
+
+        return PopupMenuButton<String>(
+          icon: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              const Icon(Icons.notifications_outlined, color: Colors.white),
+              if (unreadCount > 0)
+                Positioned(
+                  right: -2,
+                  top: -2,
+                  child: Container(
+                    width: 18,
+                    height: 18,
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        unreadCount > 9 ? '9+' : '$unreadCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          color: Colors.white,
+          itemBuilder: (context) {
+            if (snapshot.hasError) {
+              return const [
+                PopupMenuItem<String>(
+                  value: 'error',
+                  child: Text('Unable to load notifications'),
+                ),
+              ];
+            }
+
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const [
+                PopupMenuItem<String>(
+                  value: 'loading',
+                  child: Text('Loading notifications...'),
+                ),
+              ];
+            }
+
+            final docs = snapshot.data?.docs ?? [];
+            if (docs.isEmpty) {
+              return const [
+                PopupMenuItem<String>(
+                  value: 'empty',
+                  child: Text('No notifications yet'),
+                ),
+              ];
+            }
+
+            return docs.map((doc) {
+              final data = doc.data() as Map<String, dynamic>;
+              final title = data['title']?.toString() ?? 'Notification';
+              final body = data['body']?.toString() ?? '';
+              final read = data['read'] as bool? ?? false;
+              return PopupMenuItem<String>(
+                value: doc.id,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: read ? Colors.black54 : Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      body,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: Colors.grey[700], fontSize: 12),
+                    ),
+                  ],
+                ),
+              );
+            }).toList();
+          },
+          onSelected: (selectedId) async {
+            if (selectedId == 'loading' || selectedId == 'empty' || selectedId == 'error') {
+              return;
+            }
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .collection('notifications')
+                .doc(selectedId)
+                .update({'read': true});
+          },
+        );
+      },
     );
   }
 
