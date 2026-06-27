@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class StudentBookingPage extends StatefulWidget {
@@ -64,28 +66,57 @@ class _StudentBookingPageState extends State<StudentBookingPage> {
       return;
     }
 
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
     setState(() {
       _isSubmitting = true;
     });
 
-    await Future.delayed(const Duration(seconds: 1));
+    final requestedTime = _selectedTime!.format(context);
 
-    if (!mounted) return;
+    try {
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      final studentName = userDoc.data()?['name']?.toString() ?? '';
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Booking request sent for $_selectedSubject!'),
-        backgroundColor: Colors.green,
-      ),
-    );
+      await FirebaseFirestore.instance.collection('bookings').add({
+        'studentId': user.uid,
+        'studentName': studentName,
+        'subject': _selectedSubject,
+        'status': 'pending',
+        'requestedDate': Timestamp.fromDate(_selectedDate!),
+        'requestedTime': requestedTime,
+        'notes': _notesController.text.trim(),
+        'createdAt': FieldValue.serverTimestamp(),
+      });
 
-    setState(() {
-      _isSubmitting = false;
-      _selectedSubject = null;
-      _selectedDate = null;
-      _selectedTime = null;
-      _notesController.clear();
-    });
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Booking request sent for $_selectedSubject!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Booking failed. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+          _selectedSubject = null;
+          _selectedDate = null;
+          _selectedTime = null;
+          _notesController.clear();
+        });
+      }
+    }
   }
 
   @override
@@ -138,7 +169,7 @@ class _StudentBookingPageState extends State<StudentBookingPage> {
             _buildSectionTitle('Subject'),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              value: _selectedSubject,
+              initialValue: _selectedSubject,
               decoration: InputDecoration(
                 filled: true,
                 fillColor: Colors.white,

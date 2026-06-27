@@ -12,25 +12,95 @@ class StudentDashboard extends StatefulWidget {
   State<StudentDashboard> createState() => _StudentDashboardState();
 }
 
+class BookingInfo {
+  final String subject;
+  final String status;
+  final String dateLabel;
+  final String tutorName;
+  final String avatar;
+
+  BookingInfo({
+    required this.subject,
+    required this.status,
+    required this.dateLabel,
+    required this.tutorName,
+    required this.avatar,
+  });
+}
+
 class _StudentDashboardState extends State<StudentDashboard> {
   int _selectedIndex = 0;
   String _userName = 'Student';
+  int _sessionCount = 0;
+  double _rating = 0.0;
+  int _hours = 0;
+  BookingInfo? _liveBooking;
+  BookingInfo? _nextBooking;
 
   @override
   void initState() {
     super.initState();
-    _loadUserProfile();
+    _loadUserData();
   }
 
-  Future<void> _loadUserProfile() async {
+  Future<void> _loadUserData() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-    if (!mounted) return;
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    final userData = userDoc.data() ?? {};
+    final sessions = userData['sessions'];
+    final rating = userData['rating'];
+    final hours = userData['hours'];
 
+    final bookingQuery = await FirebaseFirestore.instance
+        .collection('bookings')
+        .where('studentId', isEqualTo: user.uid)
+        .orderBy('createdAt', descending: true)
+        .get();
+
+    BookingInfo? liveBooking;
+    BookingInfo? nextBooking;
+
+    for (final doc in bookingQuery.docs) {
+      final data = doc.data();
+      final status = (data['status'] ?? '').toString().toLowerCase();
+      final subject = data['subject']?.toString() ?? 'Unknown subject';
+      final requestedDate = data['requestedDate'];
+      final requestedTime = data['requestedTime']?.toString() ?? '';
+      final tutorName = data['tutorName']?.toString() ?? 'Pending tutor';
+      final dateLabel = requestedDate is Timestamp
+          ? '${requestedDate.toDate().day}/${requestedDate.toDate().month}/${requestedDate.toDate().year} ${requestedTime.isNotEmpty ? requestedTime : ''}'.trim()
+          : requestedTime.isNotEmpty
+              ? requestedTime
+              : 'To be scheduled';
+      final avatar = subject.isNotEmpty ? subject.trim()[0].toUpperCase() : 'P';
+
+      final bookingInfo = BookingInfo(
+        subject: subject,
+        status: status,
+        dateLabel: dateLabel,
+        tutorName: tutorName,
+        avatar: avatar,
+      );
+
+      if (liveBooking == null && status == 'live') {
+        liveBooking = bookingInfo;
+      }
+
+      if (nextBooking == null && (status == 'pending' || status == 'confirmed')) {
+        nextBooking = bookingInfo;
+      }
+    }
+
+    if (!mounted) return;
     setState(() {
-      _userName = doc.data()?['name']?.toString() ?? 'Student';
+      _userName = userData['name']?.toString() ?? 'Student';
+      _sessionCount = sessions is num ? sessions.toInt() : 0;
+      _rating = rating is num ? rating.toDouble() : 0.0;
+      _hours = hours is num ? hours.toInt() : 0;
+      _liveBooking = liveBooking;
+      _nextBooking = nextBooking;
     });
   }
 
@@ -159,180 +229,115 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 _buildStatCard(
                   icon: Icons.book_outlined,
                   title: 'Sessions',
-                  value: '12',
+                  value: '$_sessionCount',
                   color: Colors.blue,
                 ),
                 const SizedBox(width: 12),
                 _buildStatCard(
                   icon: Icons.star_outlined,
                   title: 'Rating',
-                  value: '4.8',
+                  value: _rating.toStringAsFixed(1),
                   color: Colors.amber,
                 ),
                 const SizedBox(width: 12),
                 _buildStatCard(
                   icon: Icons.schedule_outlined,
                   title: 'Hours',
-                  value: '36',
+                  value: '$_hours',
                   color: Colors.green,
                 ),
               ],
             ),
           ),
 
-          // Live Session
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Live Session',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _buildLiveSessionCard(
-                  tutorName: 'Dr. Amir Hassan',
-                  subject: 'Physics - Quantum Mechanics',
-                  duration: 'Started 15 mins ago',
-                  avatar: 'AH',
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Upcoming Session
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Next Session',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _buildSessionCard(
-                  tutorName: 'Nur Fatimah',
-                  subject: 'Mathematics - Calculus',
-                  date: 'Tomorrow at 3:00 PM',
-                  status: 'Confirmed',
-                  avatar: 'NF',
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Recent Tutors / Favorites
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'My Regular Tutors',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+          if (_liveBooking != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Live Session',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
-                    GestureDetector(
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('View all tutors coming soon')),
-                        );
-                      },
-                      child: Text(
-                        'View all',
-                        style: TextStyle(
-                          color: const Color(0xFF6200EE),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildLiveSessionCard(
+                    tutorName: _liveBooking!.tutorName,
+                    subject: _liveBooking!.subject,
+                    duration: 'Live now',
+                    avatar: _liveBooking!.avatar,
+                  ),
+                ],
+              ),
+            ),
+
+          if (_liveBooking != null) const SizedBox(height: 24),
+
+          if (_nextBooking != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Next Session',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildSessionCard(
+                    tutorName: _nextBooking!.tutorName,
+                    subject: _nextBooking!.subject,
+                    date: _nextBooking!.dateLabel,
+                    status: _nextBooking!.status == 'pending' ? 'Pending' : 'Confirmed',
+                    avatar: _nextBooking!.avatar,
+                  ),
+                ],
+              ),
+            ),
+
+          if (_nextBooking != null) const SizedBox(height: 24),
+
+          if (_nextBooking == null && _liveBooking == null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 140,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: [
-                      _buildTutorCard(
-                        name: 'Nur Fatimah',
-                        subject: 'Mathematics',
-                        rating: 4.8,
-                        sessions: 12,
-                        avatar: 'NF',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'No active sessions yet',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
-                      _buildTutorCard(
-                        name: 'Ahmad Khalil',
-                        subject: 'Physics',
-                        rating: 4.6,
-                        sessions: 8,
-                        avatar: 'AK',
-                      ),
-                      _buildTutorCard(
-                        name: 'Sarah Min',
-                        subject: 'Chemistry',
-                        rating: 4.9,
-                        sessions: 5,
-                        avatar: 'SM',
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Your next session will appear here once you request a booking.',
+                      style: TextStyle(color: Colors.black54),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
 
-          const SizedBox(height: 24),
-
-          // Recent Activity
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Recent Activity',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _buildActivityItem(
-                  icon: Icons.check_circle_outline,
-                  title: 'Session Completed',
-                  subtitle: 'Mathematics - 2 hours with Nur Fatimah',
-                  time: '2 hours ago',
-                ),
-                _buildActivityItem(
-                  icon: Icons.star_outline,
-                  title: 'You rated a tutor',
-                  subtitle: 'Gave 5 stars to Nur Fatimah',
-                  time: '1 day ago',
-                ),
-                _buildActivityItem(
-                  icon: Icons.payment_outlined,
-                  title: 'Payment received',
-                  subtitle: 'RM60 credited to your account',
-                  time: '3 days ago',
-                ),
-              ],
-            ),
-          ),
+          if (_nextBooking != null || _liveBooking != null)
+            const SizedBox(height: 24),
 
           const SizedBox(height: 32),
         ],
@@ -592,160 +597,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
     );
   }
 
-  Widget _buildTutorCard({
-    required String name,
-    required String subject,
-    required double rating,
-    required int sessions,
-    required String avatar,
-  }) {
-    return Container(
-      width: 140,
-      margin: const EdgeInsets.only(right: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF6200EE), Color(0xFF03DAC6)],
-                ),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  avatar,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Column(
-              children: [
-                Text(
-                  name,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subject,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Colors.grey[600],
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.star, size: 12, color: Colors.amber),
-                    const SizedBox(width: 2),
-                    Text(
-                      '$rating',
-                      style: const TextStyle(fontSize: 10),
-                    ),
-                  ],
-                ),
-                Text(
-                  '$sessions sessions',
-                  style: TextStyle(
-                    fontSize: 9,
-                    color: Colors.grey[500],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActivityItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required String time,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: const Color(0xFF6200EE).withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              icon,
-              color: const Color(0xFF6200EE),
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            time,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[500],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildSearchTab() {
     return const FindTutorPage();
