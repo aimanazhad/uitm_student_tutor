@@ -9,6 +9,7 @@ import 'pages/studentprofile_page.dart';
 import 'pages/studenteditprofile_page.dart';
 import 'pages/studentbooking_page.dart';
 import 'pages/findtutor_page.dart';
+import 'pages/student_notifications.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +44,7 @@ class MyApp extends StatelessWidget {
         '/student-edit-profile': (context) => const StudentEditProfilePage(),
         '/student-booking': (context) => const StudentBookingPage(),
         '/find-tutor': (context) => const FindTutorPage(),
+        '/student-notifications': (context) => const StudentNotificationsPage(),
         '/admin-login': (context) => const AdminLoginPage(),
         '/admin-dashboard': (context) => const AdminDashboard(),
       },

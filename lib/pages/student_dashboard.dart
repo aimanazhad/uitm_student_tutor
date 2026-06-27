@@ -36,11 +36,72 @@ class _StudentDashboardState extends State<StudentDashboard> {
   int _hours = 0;
   BookingInfo? _liveBooking;
   BookingInfo? _nextBooking;
+  List<Map<String, dynamic>> _notifications = [];
+  bool _notificationsLoading = false;
+  bool _notificationsError = false;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _loadNotifications();
+  }
+
+  Future<void> _loadNotifications() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    setState(() {
+      _notificationsLoading = true;
+      _notificationsError = false;
+    });
+
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('notifications')
+          .orderBy('createdAt', descending: true)
+          .limit(5)
+          .get();
+
+      final items = snapshot.docs.map((doc) {
+        final data = doc.data();
+        return {
+          'id': doc.id,
+          'title': data['title']?.toString() ?? 'Notification',
+          'body': data['body']?.toString() ?? '',
+          'read': data['read'] as bool? ?? false,
+          'createdAt': data['createdAt'],
+        };
+      }).toList();
+
+      if (!mounted) return;
+      setState(() {
+        _notifications = items;
+        _notificationsLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _notificationsLoading = false;
+        _notificationsError = true;
+      });
+    }
+  }
+
+  Future<void> _markNotificationRead(String notificationId) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('notifications')
+        .doc(notificationId)
+        .update({'read': true});
+
+    _loadNotifications();
   }
 
   Future<void> _loadUserData() async {
@@ -132,13 +193,88 @@ class _StudentDashboardState extends State<StudentDashboard> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
+          PopupMenuButton<String>(
+            icon: Stack(
+              children: [
+                const Icon(Icons.notifications_outlined, color: Colors.white),
+                if (_notifications.any((notification) => notification['read'] == false))
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             color: Colors.white,
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Notifications coming soon')),
-              );
+            itemBuilder: (context) {
+              if (_notificationsLoading) {
+                return const [
+                  PopupMenuItem<String>(
+                    value: 'loading',
+                    child: Text('Loading notifications...'),
+                  ),
+                ];
+              }
+
+              if (_notificationsError) {
+                return [
+                  const PopupMenuItem<String>(
+                    value: 'error',
+                    child: Text('Unable to load notifications'),
+                  ),
+                ];
+              }
+
+              if (_notifications.isEmpty) {
+                return const [
+                  PopupMenuItem<String>(
+                    value: 'empty',
+                    child: Text('No notifications yet'),
+                  ),
+                ];
+              }
+
+              return _notifications.map((notification) {
+                final title = notification['title'] as String;
+                final body = notification['body'] as String;
+                final read = notification['read'] as bool;
+                final id = notification['id'] as String;
+                return PopupMenuItem<String>(
+                  value: id,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: read ? Colors.black54 : Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        body,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: Colors.grey[700], fontSize: 12),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList();
+            },
+            onSelected: (selectedId) {
+              if (selectedId == 'loading' || selectedId == 'empty' || selectedId == 'error') {
+                return;
+              }
+              _markNotificationRead(selectedId);
             },
           ),
         ],
