@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class AdminLoginPage extends StatefulWidget {
@@ -20,7 +22,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
     super.dispose();
   }
 
-  void _handleAdminLogin() {
+  Future<void> _handleAdminLogin() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
@@ -34,33 +36,101 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
       return;
     }
 
-    if (email != 'admin@gmail.com' || password != '12345') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Incorrect admin email or password'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
     setState(() {
       _isLoading = true;
     });
 
-    Future.delayed(const Duration(seconds: 1), () {
+    try {
+      // Step 1: Firebase Auth login
+      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
       if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-      });
+
+      // Step 2: Verify admin role dalam Firestore
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(credential.user!.uid)
+          .get();
+
+      if (!mounted) return;
+
+      final userData = userDoc.data() ?? {};
+      final isAdmin = userData['isAdmin'] as bool? ?? false;
+      final role = userData['role']?.toString() ?? '';
+
+      if (!isAdmin || role != 'admin') {
+        // User is not an admin
+        await FirebaseAuth.instance.signOut();
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Access denied: This account is not an admin account'),
+            backgroundColor: Colors.red,
+          ),
+        );
+
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Admin login successful!'),
           backgroundColor: Colors.green,
         ),
       );
-      Navigator.of(context).pushReplacementNamed('/admin-dashboard');
-    });
+
+      // Navigate to admin dashboard
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/admin-dashboard');
+      }
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+
+      String message = 'Login failed';
+      if (e.code == 'user-not-found') {
+        message = 'Admin account not found';
+      } else if (e.code == 'wrong-password') {
+        message = 'Incorrect password';
+      } else if (e.code == 'invalid-email') {
+        message = 'Invalid email format';
+      } else if (e.code == 'user-disabled') {
+        message = 'Admin account has been disabled';
+      } else {
+        message = e.message ?? message;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: Colors.red),
+      );
+
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Unexpected error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -246,6 +316,24 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                                           fontSize: 16,
                                         ),
                                   ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Center(
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: Text(
+                              'Back to Login',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: Colors.white70,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                            ),
                           ),
                         ),
                       ],
