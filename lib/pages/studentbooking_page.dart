@@ -98,6 +98,7 @@ class _StudentBookingPageState extends State<StudentBookingPage> {
     });
 
     final requestedTime = _selectedTime!.format(context);
+    var bookingSucceeded = false;
 
     try {
       final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
@@ -116,11 +117,17 @@ class _StudentBookingPageState extends State<StudentBookingPage> {
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      await NotificationService.addNotification(
-        userId: user.uid,
-        title: 'Booking Requested',
-        body: 'Your booking for $_selectedSubject has been submitted and is pending approval.',
-      );
+      bookingSucceeded = true;
+
+      try {
+        await NotificationService.addNotification(
+          userId: user.uid,
+          title: 'Booking Requested',
+          body: 'Your booking for $_selectedSubject has been submitted and is pending approval.',
+        );
+      } catch (notificationError) {
+        debugPrint('Notification error: $notificationError');
+      }
 
       if (!mounted) return;
 
@@ -130,11 +137,15 @@ class _StudentBookingPageState extends State<StudentBookingPage> {
           backgroundColor: Colors.green,
         ),
       );
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
     } catch (e) {
+      debugPrint('Booking error: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Booking failed. Please try again.'),
+          content: Text('Booking failed. Please try again. ${e.toString()}'),
           backgroundColor: Colors.red,
         ),
       );
@@ -142,10 +153,12 @@ class _StudentBookingPageState extends State<StudentBookingPage> {
       if (mounted) {
         setState(() {
           _isSubmitting = false;
-          _selectedSubject = null;
-          _selectedDate = null;
-          _selectedTime = null;
-          _notesController.clear();
+          if (bookingSucceeded) {
+            _selectedSubject = null;
+            _selectedDate = null;
+            _selectedTime = null;
+            _notesController.clear();
+          }
         });
       }
     }

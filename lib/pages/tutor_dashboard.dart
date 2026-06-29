@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'forum_page.dart';
 import 'tutorProfile_page.dart';
+import '../services/notification_service.dart';
 
 class TutorDashboard extends StatefulWidget {
   const TutorDashboard({super.key});
@@ -27,6 +28,26 @@ class SessionInfo {
   });
 }
 
+class BookingRequest {
+  final String id;
+  final String subject;
+  final String status;
+  final String dateLabel;
+  final String studentName;
+  final String avatar;
+  final String studentId;
+
+  BookingRequest({
+    required this.id,
+    required this.subject,
+    required this.status,
+    required this.dateLabel,
+    required this.studentName,
+    required this.avatar,
+    required this.studentId,
+  });
+}
+
 class _TutorDashboardState extends State<TutorDashboard> {
   int _selectedIndex = 0;
   String _tutorName = 'Tutor';
@@ -35,6 +56,8 @@ class _TutorDashboardState extends State<TutorDashboard> {
   int _hours = 0;
   SessionInfo? _liveSession;
   SessionInfo? _nextSession;
+  List<BookingRequest> _pendingBookings = [];
+  List<BookingRequest> _allBookings = [];
 
   @override
   void initState() {
@@ -75,6 +98,8 @@ class _TutorDashboardState extends State<TutorDashboard> {
 
     SessionInfo? liveSession;
     SessionInfo? nextSession;
+    final pendingBookings = <BookingRequest>[];
+    final allBookings = <BookingRequest>[];
 
     for (final doc in bookingQuery.docs) {
       final data = doc.data();
@@ -83,6 +108,7 @@ class _TutorDashboardState extends State<TutorDashboard> {
       final requestedDate = data['requestedDate'];
       final requestedTime = data['requestedTime']?.toString() ?? '';
       final studentName = data['studentName']?.toString() ?? 'Pending student';
+      final studentId = data['studentId']?.toString() ?? '';
       final dateLabel = requestedDate is Timestamp
           ? '${requestedDate.toDate().day}/${requestedDate.toDate().month}/${requestedDate.toDate().year} ${requestedTime.isNotEmpty ? requestedTime : ''}'.trim()
           : requestedTime.isNotEmpty
@@ -97,6 +123,21 @@ class _TutorDashboardState extends State<TutorDashboard> {
         studentName: studentName,
         avatar: avatar,
       );
+
+      final bookingRequest = BookingRequest(
+        id: doc.id,
+        subject: subject,
+        status: status,
+        dateLabel: dateLabel,
+        studentName: studentName,
+        avatar: avatar,
+        studentId: studentId,
+      );
+
+      if (status == 'pending') {
+        pendingBookings.add(bookingRequest);
+      }
+      allBookings.add(bookingRequest);
 
       if (liveSession == null && status == 'live') {
         liveSession = sessionInfo;
@@ -115,6 +156,8 @@ class _TutorDashboardState extends State<TutorDashboard> {
       _hours = hours is num ? hours.toInt() : 0;
       _liveSession = liveSession;
       _nextSession = nextSession;
+      _pendingBookings = pendingBookings;
+      _allBookings = allBookings;
     });
   }
 
@@ -617,76 +660,46 @@ class _TutorDashboardState extends State<TutorDashboard> {
             'Manage your student booking requests and sessions here.',
             style: TextStyle(color: Colors.black54),
           ),
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: const [
-                    Icon(Icons.people_outlined, color: Color(0xFF6200EE)),
-                    SizedBox(width: 8),
-                    Text(
-                      'Pending Requests',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                const Text('Review and accept/reject booking requests from students.'),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // Navigate to bookings management
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6200EE),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    child: const Text(
-                      'View All Bookings',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          const SizedBox(height: 24),
+          const Text(
+            'Pending Requests',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(16),
+          const SizedBox(height: 12),
+          if (_pendingBookings.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Text('No pending booking requests at the moment.'),
+            )
+          else
+            Column(
+              children: _pendingBookings.map(_buildPendingBookingCard).toList(),
             ),
-            child: Row(
-              children: const [
-                Icon(Icons.info_outline, color: Color(0xFF6200EE)),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Student booking requests will appear here for your review.',
-                    style: TextStyle(fontSize: 13),
-                  ),
-                ),
-              ],
-            ),
+          const SizedBox(height: 24),
+          const Text(
+            'All Bookings',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
+          const SizedBox(height: 12),
+          if (_allBookings.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Text('There are no bookings yet.'),
+            )
+          else
+            Column(
+              children: _allBookings.map(_buildBookingHistoryCard).toList(),
+            ),
         ],
       ),
     );
@@ -694,6 +707,186 @@ class _TutorDashboardState extends State<TutorDashboard> {
 
   Widget _buildForumTab() {
     return const ForumPage();
+  }
+
+  Future<void> _updateBookingStatus(BookingRequest booking, String newStatus) async {
+    try {
+      final updateData = {
+        'status': newStatus,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+      if (newStatus == 'confirmed') {
+        updateData['approvedAt'] = FieldValue.serverTimestamp();
+      } else if (newStatus == 'rejected') {
+        updateData['rejectedAt'] = FieldValue.serverTimestamp();
+      }
+
+      await FirebaseFirestore.instance.collection('bookings').doc(booking.id).update(updateData);
+
+      await NotificationService.addNotification(
+        userId: booking.studentId,
+        title: newStatus == 'confirmed' ? 'Booking Approved' : 'Booking Rejected',
+        body: newStatus == 'confirmed'
+            ? 'Your booking for ${booking.subject} with $_tutorName has been approved.'
+            : 'Your booking for ${booking.subject} with $_tutorName has been rejected.',
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            newStatus == 'confirmed'
+                ? 'Booking approved for ${booking.studentName}.'
+                : 'Booking rejected for ${booking.studentName}.',
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+      await _loadTutorData();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Unable to update booking status: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Widget _buildPendingBookingCard(BookingRequest booking) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                booking.studentName,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              Text(
+                booking.status[0].toUpperCase() + booking.status.substring(1),
+                style: const TextStyle(
+                  color: Colors.orange,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text('Subject: ${booking.subject}'),
+          const SizedBox(height: 4),
+          Text('Requested: ${booking.dateLabel}'),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => _updateBookingStatus(booking, 'confirmed'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6200EE),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: const Text('Approve'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => _updateBookingStatus(booking, 'rejected'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    side: const BorderSide(color: Colors.red),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: const Text('Reject'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBookingHistoryCard(BookingRequest booking) {
+    final status = booking.status[0].toUpperCase() + booking.status.substring(1);
+    final statusColor = booking.status == 'confirmed'
+        ? Colors.green
+        : booking.status == 'rejected'
+            ? Colors.red
+            : Colors.orange;
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.blue.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                booking.avatar,
+                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  booking.studentName,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Text('Subject: ${booking.subject}'),
+                const SizedBox(height: 4),
+                Text('Requested: ${booking.dateLabel}'),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: statusColor.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              status,
+              style: TextStyle(color: statusColor, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildProfileTab() {

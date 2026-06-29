@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -36,11 +38,14 @@ class _StudentDashboardState extends State<StudentDashboard> {
   int _hours = 0;
   BookingInfo? _liveBooking;
   BookingInfo? _nextBooking;
+  List<BookingInfo> _bookingHistory = [];
+  StreamSubscription<QuerySnapshot>? _bookingSubscription;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _subscribeToBookings();
   }
 
   Future<void> _loadUserData() async {
@@ -53,55 +58,74 @@ class _StudentDashboardState extends State<StudentDashboard> {
     final rating = userData['rating'];
     final hours = userData['hours'];
 
-    final bookingQuery = await FirebaseFirestore.instance
-        .collection('bookings')
-        .where('studentId', isEqualTo: user.uid)
-        .orderBy('createdAt', descending: true)
-        .get();
-
-    BookingInfo? liveBooking;
-    BookingInfo? nextBooking;
-
-    for (final doc in bookingQuery.docs) {
-      final data = doc.data();
-      final status = (data['status'] ?? '').toString().toLowerCase();
-      final subject = data['subject']?.toString() ?? 'Unknown subject';
-      final requestedDate = data['requestedDate'];
-      final requestedTime = data['requestedTime']?.toString() ?? '';
-      final tutorName = data['tutorName']?.toString() ?? 'Pending tutor';
-      final dateLabel = requestedDate is Timestamp
-          ? '${requestedDate.toDate().day}/${requestedDate.toDate().month}/${requestedDate.toDate().year} ${requestedTime.isNotEmpty ? requestedTime : ''}'.trim()
-          : requestedTime.isNotEmpty
-              ? requestedTime
-              : 'To be scheduled';
-      final avatar = subject.isNotEmpty ? subject.trim()[0].toUpperCase() : 'P';
-
-      final bookingInfo = BookingInfo(
-        subject: subject,
-        status: status,
-        dateLabel: dateLabel,
-        tutorName: tutorName,
-        avatar: avatar,
-      );
-
-      if (liveBooking == null && status == 'live') {
-        liveBooking = bookingInfo;
-      }
-
-      if (nextBooking == null && (status == 'pending' || status == 'confirmed')) {
-        nextBooking = bookingInfo;
-      }
-    }
-
     if (!mounted) return;
     setState(() {
       _userName = userData['name']?.toString() ?? 'Student';
       _sessionCount = sessions is num ? sessions.toInt() : 0;
       _rating = rating is num ? rating.toDouble() : 0.0;
       _hours = hours is num ? hours.toInt() : 0;
-      _liveBooking = liveBooking;
-      _nextBooking = nextBooking;
     });
+  }
+
+  void _subscribeToBookings() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    _bookingSubscription = FirebaseFirestore.instance
+        .collection('bookings')
+        .where('studentId', isEqualTo: user.uid)
+        .snapshots()
+        .listen((snapshot) {
+      final bookingHistory = <BookingInfo>[];
+      BookingInfo? liveBooking;
+      BookingInfo? nextBooking;
+
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        final status = (data['status'] ?? '').toString().toLowerCase();
+        final subject = data['subject']?.toString() ?? 'Unknown subject';
+        final requestedDate = data['requestedDate'];
+        final requestedTime = data['requestedTime']?.toString() ?? '';
+        final tutorName = data['tutorName']?.toString() ?? 'Pending tutor';
+        final dateLabel = requestedDate is Timestamp
+            ? '${requestedDate.toDate().day}/${requestedDate.toDate().month}/${requestedDate.toDate().year} ${requestedTime.isNotEmpty ? requestedTime : ''}'.trim()
+            : requestedTime.isNotEmpty
+                ? requestedTime
+                : 'To be scheduled';
+        final avatar = subject.isNotEmpty ? subject.trim()[0].toUpperCase() : 'P';
+
+        final bookingInfo = BookingInfo(
+          subject: subject,
+          status: status,
+          dateLabel: dateLabel,
+          tutorName: tutorName,
+          avatar: avatar,
+        );
+
+        bookingHistory.add(bookingInfo);
+
+        if (liveBooking == null && status == 'live') {
+          liveBooking = bookingInfo;
+        }
+
+        if (nextBooking == null && (status == 'pending' || status == 'confirmed')) {
+          nextBooking = bookingInfo;
+        }
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _liveBooking = liveBooking;
+        _nextBooking = nextBooking;
+        _bookingHistory = bookingHistory;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _bookingSubscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -610,73 +634,88 @@ class _StudentDashboardState extends State<StudentDashboard> {
             style: TextStyle(color: Colors.black54),
           ),
           const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+          const Text(
+            'Bookings',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          if (_bookingHistory.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Text('Your booking requests will appear here once tutors respond.'),
+            )
+          else
+            Column(
+              children: _bookingHistory.map(_buildBookingCard).toList(),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBookingCard(BookingInfo booking) {
+    final statusLabel = booking.status[0].toUpperCase() + booking.status.substring(1);
+    final statusColor = booking.status == 'confirmed'
+        ? Colors.green
+        : booking.status == 'rejected'
+            ? Colors.red
+            : Colors.orange;
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.blue.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                booking.avatar,
+                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: const [
-                    Icon(Icons.school_outlined, color: Color(0xFF6200EE)),
-                    SizedBox(width: 8),
-                    Text(
-                      'New Booking',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                  ],
+                Text(
+                  booking.tutorName,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 12),
-                const Text('Pick a subject, date, and time for a class session.'),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pushNamed('/student-booking');
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6200EE),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    child: const Text(
-                      'Book a Subject Class',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
+                const SizedBox(height: 4),
+                Text('Subject: ${booking.subject}'),
+                const SizedBox(height: 4),
+                Text('Date: ${booking.dateLabel}'),
               ],
             ),
           ),
-          const SizedBox(height: 20),
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(16),
+              color: statusColor.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(20),
             ),
-            child: Row(
-              children: const [
-                Icon(Icons.info_outline, color: Color(0xFF6200EE)),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Your booking requests will appear here once tutors respond.',
-                    style: TextStyle(fontSize: 13),
-                  ),
-                ),
-              ],
+            child: Text(
+              statusLabel,
+              style: TextStyle(color: statusColor, fontWeight: FontWeight.w600),
             ),
           ),
         ],
