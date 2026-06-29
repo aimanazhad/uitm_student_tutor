@@ -57,6 +57,18 @@ class _LoginPageState extends State<LoginPage> {
           .doc(userCredential.user!.uid)
           .get();
 
+      if (!userDoc.exists) {
+        await FirebaseAuth.instance.signOut();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('This account has been rejected or removed.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
       final role = userDoc.data()?['role'] ?? 'student';
       final tutorStatus = userDoc.data()?['tutorStatus']?.toString() ?? '';
       final requestedTutor = userDoc.data()?['requestedTutor'] == true;

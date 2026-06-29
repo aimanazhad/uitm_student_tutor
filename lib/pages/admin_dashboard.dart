@@ -379,17 +379,22 @@ class _AdminDashboardState extends State<AdminDashboard> {
             'rejectedAt': FieldValue.serverTimestamp(),
           });
 
-      await FirebaseFirestore.instance
+      final userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(request.userId)
-          .update({
-            'requestedTutor': false,
-            'role': 'student',
-            'roles': ['student'],
-            'isTutor': false,
-            'tutorStatus': 'rejected',
-            'tutorRejectedAt': FieldValue.serverTimestamp(),
-          });
+          .get();
+
+      if (userDoc.exists) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(request.userId)
+            .delete();
+      }
+
+      await FirebaseFirestore.instance
+          .collection('tutor_requests')
+          .doc(request.userId)
+          .delete();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
