@@ -47,6 +47,21 @@ class _TutorDashboardState extends State<TutorDashboard> {
 
     final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
     final userData = userDoc.data() ?? {};
+    final role = userData['role']?.toString() ?? '';
+    final tutorStatus = userData['tutorStatus']?.toString() ?? '';
+
+    if (role != 'tutor' || tutorStatus != 'approved') {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tutor access requires admin approval.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      Navigator.of(context).pushReplacementNamed('/student-dashboard');
+      return;
+    }
+
     final studentsTaught = userData['studentsTaught'];
     final rating = userData['rating'];
     final hours = userData['hours'];

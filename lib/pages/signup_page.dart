@@ -109,13 +109,12 @@ class _SignUpPageState extends State<SignUpPage> {
             'email': email,
             'phone': phone,
             'matric': matric,
-            'role': _isTutor ? 'tutor' : 'student',
-            'roles': [
-              if (_isStudent) 'student',
-              if (_isTutor) 'tutor',
-            ],
-            'isStudent': _isStudent,
-            'isTutor': _isTutor,
+            'role': _isTutor ? 'pending_tutor' : 'student',
+            'roles': ['student'],
+            'isStudent': true,
+            'isTutor': false,
+            'requestedTutor': _isTutor,
+            'tutorStatus': _isTutor ? 'pending' : 'none',
             'createdAt': FieldValue.serverTimestamp(),
           });
 

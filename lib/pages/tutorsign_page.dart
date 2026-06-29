@@ -51,17 +51,30 @@ class _TutorSignPageState extends State<TutorSignPage> {
         throw Exception('No authenticated user');
       }
 
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+      // Get user info from users collection
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      final userData = userDoc.data() ?? {};
+      final userName = userData['name']?.toString() ?? 'Unknown';
+      final userEmail = userData['email']?.toString() ?? user.email ?? '';
+
+      // Save to pending tutor_requests collection
+      await FirebaseFirestore.instance.collection('tutor_requests').doc(user.uid).set({
+        'userId': user.uid,
+        'name': userName,
+        'email': userEmail,
         'subject': selected.first,
         'subjects': selected,
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+        'status': 'pending', // pending, approved, rejected
+        'requestedAt': FieldValue.serverTimestamp(),
+        'approvedAt': null,
+        'rejectedAt': null,
+      });
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Tutor registration successful!'),
+          content: Text('Tutor registration submitted! Awaiting admin approval.'),
           backgroundColor: Colors.green,
         ),
       );
@@ -74,7 +87,7 @@ class _TutorSignPageState extends State<TutorSignPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to save tutor information: $e'),
+            content: Text('Failed to submit tutor registration: $e'),
             backgroundColor: Colors.red,
           ),
         );

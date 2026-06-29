@@ -58,6 +58,9 @@ class _LoginPageState extends State<LoginPage> {
           .get();
 
       final role = userDoc.data()?['role'] ?? 'student';
+      final tutorStatus = userDoc.data()?['tutorStatus']?.toString() ?? '';
+      final requestedTutor = userDoc.data()?['requestedTutor'] == true;
+      final isApprovedTutor = role == 'tutor' && tutorStatus == 'approved';
 
       if (!mounted) return;
 
@@ -69,13 +72,31 @@ class _LoginPageState extends State<LoginPage> {
           ),
         );
         Navigator.of(context).pushReplacementNamed('/admin-dashboard');
-      } else {
+      } else if (isApprovedTutor) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Login successful!'),
             backgroundColor: Colors.green,
           ),
         );
+        Navigator.of(context).pushReplacementNamed('/tutor-dashboard');
+      } else {
+        if (requestedTutor && tutorStatus == 'pending') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Tutor request pending approval. You can continue as a student.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Login successful!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+
         Navigator.of(context).pushReplacementNamed('/student-dashboard');
       }
     } on FirebaseAuthException catch (e) {
