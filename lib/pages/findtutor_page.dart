@@ -61,8 +61,12 @@ class _FindTutorPageState extends State<FindTutorPage> {
             ? subjectList.join(', ')
             : (data['subject']?.toString() ?? 'Unknown');
 
+        final subjectOptions = subjectList.isNotEmpty
+            ? subjectList
+            : [if (subject.isNotEmpty) subject];
+
         final matchesSubject = _selectedSubject == 'All Subjects' ||
-            subjectList.contains(_selectedSubject) ||
+            subjectOptions.contains(_selectedSubject) ||
             subject == _selectedSubject;
 
         final matchesSearch = searchText.isEmpty ||
@@ -78,6 +82,7 @@ class _FindTutorPageState extends State<FindTutorPage> {
           'id': doc.id,
           'name': name,
           'subject': subject,
+          'subjects': subjectOptions,
           'rating': (data['rating'] is num) ? (data['rating'] as num).toDouble() : 0.0,
           'reviewCount': data['reviewCount'] ?? 0,
           'price': (data['price'] is num) ? (data['price'] as num).toDouble() : 50.0,
@@ -613,7 +618,11 @@ class _FindTutorPageState extends State<FindTutorPage> {
     Navigator.pushNamed(
       context,
       '/student-booking',
-      arguments: {'tutorId': tutor['id'], 'tutorName': tutor['name']},
+      arguments: {
+        'tutorId': tutor['id'],
+        'tutorName': tutor['name'],
+        'tutorSubjects': tutor['subjects'],
+      },
     );
   }
 }

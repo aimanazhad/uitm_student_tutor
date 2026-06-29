@@ -14,11 +14,39 @@ class StudentBookingPage extends StatefulWidget {
 class _StudentBookingPageState extends State<StudentBookingPage> {
   final List<String> _subjects = kBookingSubjects;
 
+  String? _tutorId;
+  String? _tutorName;
+  List<String>? _tutorSubjects;
+  bool _hasInitializedRouteArgs = false;
+
   String? _selectedSubject;
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
   final TextEditingController _notesController = TextEditingController();
   bool _isSubmitting = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_hasInitializedRouteArgs) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is Map<String, dynamic>) {
+        _tutorId = args['tutorId'] as String?;
+        _tutorName = args['tutorName'] as String?;
+        final subjectsArg = args['tutorSubjects'];
+        if (subjectsArg is List) {
+          _tutorSubjects = subjectsArg.map((item) => item.toString()).toList();
+        } else if (args['tutorSubject'] is String) {
+          _tutorSubjects = [args['tutorSubject'] as String];
+        }
+
+        if (_tutorSubjects != null && _tutorSubjects!.isNotEmpty && _selectedSubject == null) {
+          _selectedSubject = _tutorSubjects!.first;
+        }
+      }
+      _hasInitializedRouteArgs = true;
+    }
+  }
 
   @override
   void dispose() {
@@ -78,6 +106,8 @@ class _StudentBookingPageState extends State<StudentBookingPage> {
       await FirebaseFirestore.instance.collection('bookings').add({
         'studentId': user.uid,
         'studentName': studentName,
+        'tutorId': _tutorId,
+        'tutorName': _tutorName ?? '',
         'subject': _selectedSubject,
         'status': 'pending',
         'requestedDate': Timestamp.fromDate(_selectedDate!),
@@ -168,26 +198,67 @@ class _StudentBookingPageState extends State<StudentBookingPage> {
               ),
             ),
             const SizedBox(height: 24),
+            if (_tutorName != null || (_tutorSubjects != null && _tutorSubjects!.isNotEmpty)) ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_tutorName != null) _buildSectionLabelValue('Tutor', _tutorName!),
+                    if (_tutorSubjects != null && _tutorSubjects!.isNotEmpty)
+                      _buildSectionLabelValue(
+                        'Subject',
+                        _selectedSubject ?? _tutorSubjects!.first,
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
             _buildSectionTitle('Subject'),
             const SizedBox(height: 8),
-            DropdownButtonFormField<String>(
-              initialValue: _selectedSubject,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            if (_tutorSubjects != null && _tutorSubjects!.isNotEmpty)
+              DropdownButtonFormField<String>(
+                value: _selectedSubject,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                ),
+                items: _tutorSubjects!.map((subject) {
+                  return DropdownMenuItem(value: subject, child: Text(subject));
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedSubject = value;
+                  });
+                },
+              )
+            else
+              DropdownButtonFormField<String>(
+                initialValue: _selectedSubject,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                ),
+                hint: const Text('Choose subject'),
+                items: _subjects.map((subject) {
+                  return DropdownMenuItem(value: subject, child: Text(subject));
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedSubject = value;
+                  });
+                },
               ),
-              hint: const Text('Choose subject'),
-              items: _subjects.map((subject) {
-                return DropdownMenuItem(value: subject, child: Text(subject));
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedSubject = value;
-                });
-              },
-            ),
             const SizedBox(height: 20),
             _buildSectionTitle('Select date'),
             const SizedBox(height: 8),
@@ -306,6 +377,25 @@ class _StudentBookingPageState extends State<StudentBookingPage> {
     return Text(
       title,
       style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black87),
+    );
+  }
+
+  Widget _buildSectionLabelValue(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w600)),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
