@@ -15,6 +15,8 @@ class TutorDashboard extends StatefulWidget {
 }
 
 class SessionInfo {
+  final String id;
+  final String studentId;
   final String subject;
   final String status;
   final String dateLabel;
@@ -22,6 +24,8 @@ class SessionInfo {
   final String avatar;
 
   SessionInfo({
+    required this.id,
+    required this.studentId,
     required this.subject,
     required this.status,
     required this.dateLabel,
@@ -120,6 +124,8 @@ class _TutorDashboardState extends State<TutorDashboard> {
       final avatar = subject.isNotEmpty ? subject.trim()[0].toUpperCase() : 'T';
 
       final sessionInfo = SessionInfo(
+        id: doc.id,
+        studentId: studentId,
         subject: subject,
         status: status,
         dateLabel: dateLabel,
@@ -362,9 +368,25 @@ class _TutorDashboardState extends State<TutorDashboard> {
                     studentName: _nextSession!.studentName,
                     subject: _nextSession!.subject,
                     date: _nextSession!.dateLabel,
-                    status: _nextSession!.status == 'pending' ? 'Pending' : 'Confirmed',
+                    status: _nextSession!.status == 'pending'
+                        ? 'Pending'
+                        : _nextSession!.status == 'confirmed'
+                            ? 'Confirmed'
+                            : _nextSession!.status[0].toUpperCase() + _nextSession!.status.substring(1),
                     avatar: _nextSession!.avatar,
                   ),
+          if (_nextSession!.status == 'confirmed')
+            Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: ElevatedButton(
+                onPressed: () => _endSession(_nextSession!),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: const Text('End Session'),
+              ),
+            ),
                 ],
               ),
             ),
@@ -539,14 +561,26 @@ class _TutorDashboardState extends State<TutorDashboard> {
           ),
           Container(
             decoration: BoxDecoration(
-              color: Colors.green.withValues(alpha: 0.1),
+              color: status.toLowerCase() == 'confirmed'
+                  ? Colors.green.withValues(alpha: 0.1)
+                  : status.toLowerCase() == 'completed'
+                      ? Colors.blue.withValues(alpha: 0.1)
+                      : status.toLowerCase() == 'pending'
+                          ? Colors.orange.withValues(alpha: 0.1)
+                          : Colors.grey.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             child: Text(
               status,
-              style: const TextStyle(
-                color: Colors.green,
+              style: TextStyle(
+                color: status.toLowerCase() == 'confirmed'
+                    ? Colors.green
+                    : status.toLowerCase() == 'completed'
+                        ? Colors.blue
+                        : status.toLowerCase() == 'pending'
+                            ? Colors.orange
+                            : Colors.grey,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
@@ -792,6 +826,39 @@ class _TutorDashboardState extends State<TutorDashboard> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Unable to update booking status: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _endSession(SessionInfo session) async {
+    try {
+      await FirebaseFirestore.instance.collection('bookings').doc(session.id).update({
+        'status': 'completed',
+        'completedAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      await NotificationService.addNotification(
+        userId: session.studentId,
+        title: 'Session Completed',
+        body: 'Your session for ${session.subject} has been marked complete by $_tutorName.',
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Session ended successfully.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      await _loadTutorData();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Unable to end session: $e'),
           backgroundColor: Colors.red,
         ),
       );

@@ -308,7 +308,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
                     tutorName: _nextBooking!.tutorName,
                     subject: _nextBooking!.subject,
                     date: _nextBooking!.dateLabel,
-                    status: _nextBooking!.status == 'pending' ? 'Pending' : 'Confirmed',
+                    status: _nextBooking!.status == 'pending'
+                        ? 'Pending'
+                        : _nextBooking!.status == 'confirmed'
+                            ? 'Confirmed'
+                            : _nextBooking!.status == 'completed'
+                                ? 'Completed'
+                                : _nextBooking!.status[0].toUpperCase() + _nextBooking!.status.substring(1),
                     avatar: _nextBooking!.avatar,
                   ),
                 ],
@@ -485,14 +491,26 @@ class _StudentDashboardState extends State<StudentDashboard> {
           ),
           Container(
             decoration: BoxDecoration(
-              color: Colors.green.withValues(alpha: 0.1),
+              color: status.toLowerCase() == 'confirmed'
+                  ? Colors.green.withValues(alpha: 0.1)
+                  : status.toLowerCase() == 'completed'
+                      ? Colors.blue.withValues(alpha: 0.1)
+                      : status.toLowerCase() == 'pending'
+                          ? Colors.orange.withValues(alpha: 0.1)
+                          : Colors.grey.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             child: Text(
               status,
-              style: const TextStyle(
-                color: Colors.green,
+              style: TextStyle(
+                color: status.toLowerCase() == 'confirmed'
+                    ? Colors.green
+                    : status.toLowerCase() == 'completed'
+                        ? Colors.blue
+                        : status.toLowerCase() == 'pending'
+                            ? Colors.orange
+                            : Colors.grey,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
@@ -619,6 +637,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 
   Widget _buildBookingsTab() {
+    final activeBookings = _bookingHistory.where((booking) => booking.status != 'completed').toList();
+    final previousSessions = _bookingHistory.where((booking) => booking.status == 'completed').toList();
+
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -639,7 +660,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-          if (_bookingHistory.isEmpty)
+          if (activeBookings.isEmpty)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
@@ -651,7 +672,27 @@ class _StudentDashboardState extends State<StudentDashboard> {
             )
           else
             Column(
-              children: _bookingHistory.map(_buildBookingCard).toList(),
+              children: activeBookings.map(_buildBookingCard).toList(),
+            ),
+          const SizedBox(height: 24),
+          const Text(
+            'Previous Sessions',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          if (previousSessions.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Text('Previous completed sessions will appear here after your tutor ends them.'),
+            )
+          else
+            Column(
+              children: previousSessions.map(_buildBookingCard).toList(),
             ),
         ],
       ),
@@ -662,9 +703,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
     final statusLabel = booking.status[0].toUpperCase() + booking.status.substring(1);
     final statusColor = booking.status == 'confirmed'
         ? Colors.green
-        : booking.status == 'rejected'
-            ? Colors.red
-            : Colors.orange;
+        : booking.status == 'completed'
+            ? Colors.blue
+            : booking.status == 'rejected'
+                ? Colors.red
+                : Colors.orange;
 
     return Container(
       width: double.infinity,
@@ -681,7 +724,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.1),
+              color: Colors.blue.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Center(
