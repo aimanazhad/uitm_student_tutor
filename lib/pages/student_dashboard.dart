@@ -361,6 +361,38 @@ class _StudentDashboardState extends State<StudentDashboard> {
           if (_nextBooking != null || _liveBooking != null)
             const SizedBox(height: 24),
 
+          if (_bookingHistory.any((booking) => booking.status == 'completed'))
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Previous Sessions',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Column(
+                    children: _bookingHistory
+                        .where((booking) => booking.status == 'completed')
+                        .map((booking) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _buildSessionCard(
+                                tutorName: booking.tutorName,
+                                subject: booking.subject,
+                                date: booking.dateLabel,
+                                status: 'Completed',
+                                avatar: booking.avatar,
+                              ),
+                            ))
+                        .toList(),
+                  ),
+                ],
+              ),
+            ),
+
           const SizedBox(height: 32),
         ],
       ),

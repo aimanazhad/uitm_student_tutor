@@ -378,13 +378,20 @@ class _TutorDashboardState extends State<TutorDashboard> {
           if (_nextSession!.status == 'confirmed')
             Padding(
               padding: const EdgeInsets.only(top: 16),
-              child: ElevatedButton(
-                onPressed: () => _endSession(_nextSession!),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => _endSession(_nextSession!),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent,
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text(
+                    'End Session',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
                 ),
-                child: const Text('End Session'),
               ),
             ),
                 ],
@@ -702,7 +709,7 @@ class _TutorDashboardState extends State<TutorDashboard> {
   }
 
   Widget _buildBookingsTab() {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -913,7 +920,10 @@ class _TutorDashboardState extends State<TutorDashboard> {
                     backgroundColor: const Color(0xFF6200EE),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  child: const Text('Approve'),
+                  child: const Text(
+                    'Approve',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -925,7 +935,10 @@ class _TutorDashboardState extends State<TutorDashboard> {
                     side: const BorderSide(color: Colors.red),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  child: const Text('Reject'),
+                  child: const Text(
+                    'Reject',
+                    style: TextStyle(color: Colors.red),
+                  ),
                 ),
               ),
             ],
