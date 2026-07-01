@@ -23,11 +23,12 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.uitm.studenttutor"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        
+        // 🔽 KITA UPDATE DUA BARIS INI 🔽
+        minSdk = flutter.minSdkVersion                 // Paksa guna SDK 21 minimum untuk sokongan Firebase
+        multiDexEnabled = true      // Aktifkan multidex supaya app tak auto-crash masa buka
+        
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

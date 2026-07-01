@@ -640,7 +640,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     final activeBookings = _bookingHistory.where((booking) => booking.status != 'completed').toList();
     final previousSessions = _bookingHistory.where((booking) => booking.status == 'completed').toList();
 
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

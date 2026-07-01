@@ -1,5 +1,6 @@
-package com.example.uitm_student_tutor
+package com.uitm.studenttutor
 
 import io.flutter.embedding.android.FlutterActivity
 
-class MainActivity : FlutterActivity()
+class MainActivity: FlutterActivity() {
+}
