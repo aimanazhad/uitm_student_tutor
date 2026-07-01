@@ -169,13 +169,29 @@ class _StudentReviewPageState extends State<StudentReviewPage> {
       });
 
       if (!mounted) return;
+      setState(() {
+        _pendingReviewBookings.removeWhere((booking) => booking['bookingId'] == bookingId);
+        if (_pendingReviewBookings.isNotEmpty) {
+          final nextBooking = _pendingReviewBookings.first;
+          _selectedBookingId = nextBooking['bookingId'] as String?;
+          _bookingId = nextBooking['bookingId'] as String?;
+          _tutorId = nextBooking['tutorId'] as String?;
+          _tutorName = nextBooking['tutorName'] as String?;
+          _subject = nextBooking['subject'] as String?;
+        } else {
+          _selectedBookingId = null;
+          _bookingId = null;
+          _tutorId = null;
+          _tutorName = null;
+          _subject = null;
+        }
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Review submitted successfully.'),
           backgroundColor: Colors.green,
         ),
       );
-      Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
