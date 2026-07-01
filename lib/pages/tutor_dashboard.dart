@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -58,11 +60,13 @@ class _TutorDashboardState extends State<TutorDashboard> {
   SessionInfo? _nextSession;
   List<BookingRequest> _pendingBookings = [];
   List<BookingRequest> _allBookings = [];
+  StreamSubscription<QuerySnapshot>? _bookingSubscription;
 
   @override
   void initState() {
     super.initState();
     _loadTutorData();
+    _subscribeToBookingUpdates();
   }
 
   Future<void> _loadTutorData() async {
@@ -90,18 +94,17 @@ class _TutorDashboardState extends State<TutorDashboard> {
     final rating = userData['rating'];
     final hours = userData['hours'];
 
-    final bookingQuery = await FirebaseFirestore.instance
-        .collection('bookings')
-        .where('tutorId', isEqualTo: user.uid)
-        .orderBy('createdAt', descending: true)
-        .get();
-
     SessionInfo? liveSession;
     SessionInfo? nextSession;
     final pendingBookings = <BookingRequest>[];
     final allBookings = <BookingRequest>[];
 
-    for (final doc in bookingQuery.docs) {
+    final bookingSnapshot = await FirebaseFirestore.instance
+        .collection('bookings')
+        .where('tutorId', isEqualTo: user.uid)
+        .get();
+
+    for (final doc in bookingSnapshot.docs) {
       final data = doc.data();
       final status = (data['status'] ?? '').toString().toLowerCase();
       final subject = data['subject']?.toString() ?? 'Unknown subject';
@@ -159,6 +162,25 @@ class _TutorDashboardState extends State<TutorDashboard> {
       _pendingBookings = pendingBookings;
       _allBookings = allBookings;
     });
+  }
+
+  void _subscribeToBookingUpdates() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    _bookingSubscription = FirebaseFirestore.instance
+        .collection('bookings')
+        .where('tutorId', isEqualTo: user.uid)
+        .snapshots()
+        .listen((snapshot) async {
+      await _loadTutorData();
+    });
+  }
+
+  @override
+  void dispose() {
+    _bookingSubscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -678,7 +700,29 @@ class _TutorDashboardState extends State<TutorDashboard> {
             )
           else
             Column(
-              children: _pendingBookings.map(_buildPendingBookingCard).toList(),
+              children: _pendingBookings.map((booking) {
+                return GestureDetector(
+                  onTap: () async {
+                    final updated = await Navigator.pushNamed(
+                      context,
+                      '/tutor-booking',
+                      arguments: {
+                        'id': booking.id,
+                        'studentId': booking.studentId,
+                        'studentName': booking.studentName,
+                        'subject': booking.subject,
+                        'dateLabel': booking.dateLabel,
+                        'status': booking.status,
+                      },
+                    );
+
+                    if (updated == true) {
+                      await _loadTutorData();
+                    }
+                  },
+                  child: _buildPendingBookingCard(booking),
+                );
+              }).toList(),
             ),
           const SizedBox(height: 24),
           const Text(
@@ -876,7 +920,7 @@ class _TutorDashboardState extends State<TutorDashboard> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.15),
+              color: statusColor.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
