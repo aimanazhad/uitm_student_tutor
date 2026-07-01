@@ -15,6 +15,7 @@ import 'pages/tutor_dashboard.dart';
 import 'pages/tutorbooking_page.dart';
 import 'pages/tutorProfile_page.dart';
 import 'pages/tutoreditprofile_page.dart';
+import 'pages/studentReview_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,6 +55,15 @@ class MyApp extends StatelessWidget {
         '/tutor-profile': (context) => const TutorProfilePage(),
         '/tutor-edit-profile': (context) => const TutorEditProfilePage(),
         '/tutor-booking': (context) => const TutorBookingPage(),
+        '/student-review': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+          return StudentReviewPage(
+            bookingId: args?['bookingId']?.toString(),
+            tutorId: args?['tutorId']?.toString(),
+            tutorName: args?['tutorName']?.toString(),
+            subject: args?['subject']?.toString(),
+          );
+        },
         '/admin-login': (context) => const AdminLoginPage(),
         '/admin-dashboard': (context) => const AdminDashboard(),
       },

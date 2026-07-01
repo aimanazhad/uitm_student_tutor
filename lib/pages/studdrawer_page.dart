@@ -1,9 +1,37 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'studentprofile_page.dart';
 import 'findtutor_page.dart';
 
-class StudentDrawerPage extends StatelessWidget {
+class StudentDrawerPage extends StatefulWidget {
   const StudentDrawerPage({super.key});
+
+  @override
+  State<StudentDrawerPage> createState() => _StudentDrawerPageState();
+}
+
+class _StudentDrawerPageState extends State<StudentDrawerPage> {
+  String _userName = 'Student';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName();
+  }
+
+  Future<void> _loadUserName() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    final data = doc.data();
+    if (data != null && data['name'] != null) {
+      if (!mounted) return;
+      setState(() {
+        _userName = data['name'].toString();
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,9 +59,9 @@ class StudentDrawerPage extends StatelessWidget {
                   child: Icon(Icons.person, color: Color(0xFF6200EE), size: 28),
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'Student Menu',
-                  style: TextStyle(
+                Text(
+                  _userName,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -77,6 +105,14 @@ class StudentDrawerPage extends StatelessWidget {
             onTap: () {
               Navigator.pop(context);
               Navigator.pushNamed(context, '/student-booking');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.rate_review_outlined, color: Color(0xFF6200EE)),
+            title: const Text('Review Tutor'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/student-review');
             },
           ),
           const Divider(),

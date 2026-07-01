@@ -843,6 +843,8 @@ class _TutorDashboardState extends State<TutorDashboard> {
     try {
       await FirebaseFirestore.instance.collection('bookings').doc(session.id).update({
         'status': 'completed',
+        'reviewRequested': true,
+        'reviewed': false,
         'completedAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });

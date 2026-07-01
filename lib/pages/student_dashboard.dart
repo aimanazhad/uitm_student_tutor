@@ -15,18 +15,26 @@ class StudentDashboard extends StatefulWidget {
 }
 
 class BookingInfo {
+  final String bookingId;
+  final String tutorId;
   final String subject;
   final String status;
   final String dateLabel;
   final String tutorName;
   final String avatar;
+  final bool reviewRequested;
+  final bool reviewed;
 
   BookingInfo({
+    required this.bookingId,
+    required this.tutorId,
     required this.subject,
     required this.status,
     required this.dateLabel,
     required this.tutorName,
     required this.avatar,
+    this.reviewRequested = false,
+    this.reviewed = false,
   });
 }
 
@@ -82,11 +90,15 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
       for (final doc in snapshot.docs) {
         final data = doc.data();
+        final bookingId = doc.id;
+        final tutorId = data['tutorId']?.toString() ?? '';
         final status = (data['status'] ?? '').toString().toLowerCase();
         final subject = data['subject']?.toString() ?? 'Unknown subject';
         final requestedDate = data['requestedDate'];
         final requestedTime = data['requestedTime']?.toString() ?? '';
         final tutorName = data['tutorName']?.toString() ?? 'Pending tutor';
+        final reviewRequested = data['reviewRequested'] == true;
+        final reviewed = data['reviewed'] == true;
         final dateLabel = requestedDate is Timestamp
             ? '${requestedDate.toDate().day}/${requestedDate.toDate().month}/${requestedDate.toDate().year} ${requestedTime.isNotEmpty ? requestedTime : ''}'.trim()
             : requestedTime.isNotEmpty
@@ -95,11 +107,15 @@ class _StudentDashboardState extends State<StudentDashboard> {
         final avatar = subject.isNotEmpty ? subject.trim()[0].toUpperCase() : 'P';
 
         final bookingInfo = BookingInfo(
+          bookingId: bookingId,
+          tutorId: tutorId,
           subject: subject,
           status: status,
           dateLabel: dateLabel,
           tutorName: tutorName,
           avatar: avatar,
+          reviewRequested: reviewRequested,
+          reviewed: reviewed,
         );
 
         bookingHistory.add(bookingInfo);
@@ -741,60 +757,91 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 ? Colors.red
                 : Colors.orange;
 
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: Colors.blue.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                booking.avatar,
-                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.blue.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    booking.avatar,
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      booking.tutorName,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 4),
+                    Text('Subject: ${booking.subject}'),
+                    const SizedBox(height: 4),
+                    Text('Date: ${booking.dateLabel}'),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  statusLabel,
+                  style: TextStyle(color: statusColor, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (booking.reviewRequested && !booking.reviewed)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pushNamed(
+                    '/student-review',
+                    arguments: {
+                      'bookingId': booking.bookingId,
+                      'tutorId': booking.tutorId,
+                      'tutorName': booking.tutorName,
+                      'subject': booking.subject,
+                    },
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6200EE),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                ),
+                child: const Text('Review Tutor', style: TextStyle(color: Colors.white)),
               ),
             ),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  booking.tutorName,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Text('Subject: ${booking.subject}'),
-                const SizedBox(height: 4),
-                Text('Date: ${booking.dateLabel}'),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              statusLabel,
-              style: TextStyle(color: statusColor, fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
+      ],
     );
   }
 
