@@ -5,6 +5,7 @@ import 'pages/admin_login.dart';
 import 'pages/admin_dashboard.dart';
 import 'pages/login_page.dart';
 import 'pages/signup_page.dart';
+import 'pages/welcome_page.dart';
 import 'pages/student_dashboard.dart';
 import 'pages/studentprofile_page.dart';
 import 'pages/studenteditprofile_page.dart';
@@ -40,7 +41,7 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const LoginPage(),
+      home: const WelcomePage(),
       debugShowCheckedModeBanner: false,
       routes: {
         '/login': (context) => const LoginPage(),

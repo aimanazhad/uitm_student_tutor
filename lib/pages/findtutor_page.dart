@@ -370,27 +370,6 @@ class _FindTutorPageState extends State<FindTutorPage> {
                     ],
                   ),
                 ),
-                // Price
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'RM ${tutor['price'].toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF6200EE),
-                      ),
-                    ),
-                    Text(
-                      '/hour',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
               ],
             ),
 

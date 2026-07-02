@@ -539,7 +539,7 @@ class _SignUpPageState extends State<SignUpPage> {
                   const SizedBox(height: 4),
                   Center(
                     child: Text(
-                      'You can choose both!',
+                      'Choose only one!',
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.7),
                         fontSize: 12,
